@@ -19,7 +19,11 @@ export default function Home() {
     if (!user) {
       const { error } = await signInAnonymously()
       if (error) {
-        setError('Error al autenticar. Intenta de nuevo.')
+        if (error.message?.includes('anonymous_provider_disabled') || error.message?.includes('disabled')) {
+          setError('La autenticación anónima está deshabilitada. Por favor, habilítala en Supabase Dashboard > Authentication > Providers > Anonymous')
+        } else {
+          setError('Error al autenticar. Intenta de nuevo.')
+        }
         return
       }
       // Wait for user to be set
@@ -56,7 +60,11 @@ export default function Home() {
     if (!user) {
       const { error } = await signInAnonymously()
       if (error) {
-        setError('Error al autenticar. Intenta de nuevo.')
+        if (error.message?.includes('anonymous_provider_disabled') || error.message?.includes('disabled')) {
+          setError('La autenticación anónima está deshabilitada. Por favor, habilítala en Supabase Dashboard > Authentication > Providers > Anonymous')
+        } else {
+          setError('Error al autenticar. Intenta de nuevo.')
+        }
         return
       }
       // Wait for user to be set

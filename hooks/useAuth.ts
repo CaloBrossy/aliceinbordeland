@@ -30,7 +30,17 @@ export function useAuth() {
   const signInAnonymously = async () => {
     try {
       const { data, error } = await supabase.auth.signInAnonymously()
-      if (error) throw error
+      if (error) {
+        // Provide a more helpful error message
+        if (error.message?.includes('anonymous_provider_disabled') || error.code === 'anonymous_provider_disabled') {
+          const helpfulError = {
+            ...error,
+            message: 'La autenticación anónima está deshabilitada. Por favor, habilítala en Supabase Dashboard > Authentication > Providers > Anonymous',
+          }
+          return { data: null, error: helpfulError }
+        }
+        throw error
+      }
       return { data, error: null }
     } catch (error: any) {
       return { data: null, error }
