@@ -99,16 +99,11 @@ CREATE POLICY "Host can delete their room" ON rooms
   USING (host_id = auth.uid()::text::uuid OR host_id::text = auth.uid()::text);
 
 -- Step 10: RLS Policies for players
--- Players in a room can read all players in that room
-CREATE POLICY "Players can read players in their room" ON players
+-- Allow any authenticated user (including anonymous) to read players
+-- The app logic will handle filtering by room_id
+CREATE POLICY "Authenticated users can read players" ON players
   FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM players p
-      WHERE p.room_id = players.room_id
-      AND (p.user_id = auth.uid()::text::uuid OR p.user_id::text = auth.uid()::text)
-    )
-  );
+  USING (auth.role() = 'authenticated' OR auth.role() = 'anon');
 
 -- Anyone can insert themselves as a player
 CREATE POLICY "Anyone can join as player" ON players
@@ -137,16 +132,11 @@ CREATE POLICY "Host can update players in their room" ON players
   );
 
 -- Step 11: RLS Policies for game_state
--- Players in a room can read game state
-CREATE POLICY "Players can read game state in their room" ON game_state
+-- Allow any authenticated user to read game_state
+-- The app logic will handle filtering by room_id
+CREATE POLICY "Authenticated users can read game state" ON game_state
   FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM players p
-      WHERE p.room_id = game_state.room_id
-      AND (p.user_id = auth.uid()::text::uuid OR p.user_id::text = auth.uid()::text)
-    )
-  );
+  USING (auth.role() = 'authenticated' OR auth.role() = 'anon');
 
 -- Host can insert/update game state
 CREATE POLICY "Host can manage game state" ON game_state
