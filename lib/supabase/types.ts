@@ -48,6 +48,7 @@ export interface Database {
           cards: number
           connected: boolean
           last_seen: string
+          created_at: string
         }
         Insert: {
           id?: string
@@ -58,6 +59,7 @@ export interface Database {
           cards?: number
           connected?: boolean
           last_seen?: string
+          created_at?: string
         }
         Update: {
           id?: string
@@ -68,6 +70,7 @@ export interface Database {
           cards?: number
           connected?: boolean
           last_seen?: string
+          created_at?: string
         }
       }
       game_state: {

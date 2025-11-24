@@ -71,6 +71,7 @@ export interface Player {
   cards: number;
   connected: boolean;
   last_seen: string;
+  created_at: string;
 }
 
 export interface Room {
