@@ -32,7 +32,7 @@ export default function GameScreen({ roomId, roomCode }: GameScreenProps) {
   const { user } = useAuth()
   const { room, players } = useRoom(roomId)
   const { gameState, updateTimer } = useGame(roomId)
-  const gsap = useGSAP()
+  const gsapAnimations = useGSAP()
   const sound = useSoundContext()
 
   const isHost = room?.host_id === user?.id
@@ -68,10 +68,10 @@ export default function GameScreen({ roomId, roomCode }: GameScreenProps) {
   // Animate game card on mount
   useEffect(() => {
     if (gameCardRef.current && game) {
-      gsap.animateCardFlip(gameCardRef.current)
+      gsapAnimations.animateCardFlip(gameCardRef.current)
     }
     if (gameContentRef.current) {
-      gsap.animateStaggerFadeIn([gameContentRef.current])
+      gsapAnimations.animateStaggerFadeIn([gameContentRef.current])
     }
     if (playersGridRef.current) {
       const cards = playersGridRef.current.querySelectorAll('[data-player-card]')
@@ -88,7 +88,7 @@ export default function GameScreen({ roomId, roomCode }: GameScreenProps) {
         }
       )
     }
-  }, [game, gsap, players])
+  }, [game, gsapAnimations, players])
 
   // Glitch effect on title (random)
   useEffect(() => {
@@ -131,7 +131,7 @@ export default function GameScreen({ roomId, roomCode }: GameScreenProps) {
   useEffect(() => {
     if (timer > 0 && timer <= 60 && timerRef.current) {
       // Pulse animation when timer is low
-      gsap.animatePulse(timerRef.current, 1)
+      gsapAnimations.animatePulse(timerRef.current, 1)
       // Play heartbeat sound when timer is very low
       if (timer <= 30 && timer > 0) {
         sound.play('heartbeat', { volume: 0.3, loop: true })
