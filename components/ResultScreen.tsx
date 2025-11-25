@@ -29,7 +29,6 @@ export default function ResultScreen({ roomId, roomCode }: ResultScreenProps) {
   const [playedDeaths, setPlayedDeaths] = useState<Set<string>>(new Set())
 
   const isHost = room?.host_id === user?.id
-  const game = room?.current_game as any
 
   const gameClearRef = useRef<HTMLDivElement>(null)
   const gameOverRef = useRef<HTMLDivElement>(null)
@@ -38,18 +37,10 @@ export default function ResultScreen({ roomId, roomCode }: ResultScreenProps) {
   const eliminatedItemsRef = useRef<(HTMLDivElement | null)[]>([])
   const survivorItemsRef = useRef<(HTMLDivElement | null)[]>([])
 
-  if (!game || !room) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-400">Cargando resultados...</p>
-        </div>
-      </div>
-    )
-  }
-
-  const results = calculateGameResults(game, { timer: 0, round: 1, votes: {}, answers: {}, current_turn: null, id: '', room_id: roomId, updated_at: '' }, players)
+  const game = room?.current_game as any
+  const results = game && room
+    ? calculateGameResults(game, { timer: 0, round: 1, votes: {}, answers: {}, current_turn: null, id: '', room_id: roomId, updated_at: '' }, players)
+    : { gameClear: false, survivors: [], eliminated: [] }
 
   // Stop game music on mount
   useEffect(() => {
