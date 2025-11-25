@@ -32,7 +32,7 @@ export default function RootLayout({
       >
         <SoundProvider>
           <ParticleBackground particleCount={50} color="#ffffff" opacity={0.3} />
-          {children}
+        {children}
           <SoundControls />
         </SoundProvider>
       </body>

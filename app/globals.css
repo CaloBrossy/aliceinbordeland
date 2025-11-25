@@ -39,7 +39,7 @@
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
   --color-text-muted: var(--text-text-muted);
-}
+  }
 
 * {
   margin: 0;
