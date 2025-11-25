@@ -484,7 +484,9 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
   }
 
   const content = getGameContent()
-  const difficultyBars = Array.from({ length: 10 }, (_, i) => i < game.difficulty)
+  // Ensure difficulty is treated as number (BaseGame.difficulty)
+  const difficulty = typeof game.difficulty === 'number' ? game.difficulty : 5
+  const difficultyBars = Array.from({ length: 10 }, (_, i) => i < difficulty)
 
   return (
     <div
@@ -571,7 +573,7 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
                   style={{
                     transform: 'scaleX(0)',
                     background: filled
-                      ? `linear-gradient(90deg, ${index < game.difficulty ? '#e94560' : '#4a4a4a'}, ${index < game.difficulty ? '#ff0033' : '#4a4a4a'})`
+                      ? `linear-gradient(90deg, ${index < difficulty ? '#e94560' : '#4a4a4a'}, ${index < difficulty ? '#ff0033' : '#4a4a4a'})`
                       : '#2a2a2a',
                     boxShadow: filled
                       ? '0 0 10px rgba(233, 69, 96, 0.6), inset 0 0 10px rgba(255, 0, 51, 0.3)'
@@ -581,7 +583,7 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
                 />
               ))}
             </div>
-            <p className="text-3xl sm:text-4xl md:text-5xl font-bold neon-red">{game.difficulty}/10</p>
+            <p className="text-3xl sm:text-4xl md:text-5xl font-bold neon-red">{difficulty}/10</p>
           </div>
         )}
 
