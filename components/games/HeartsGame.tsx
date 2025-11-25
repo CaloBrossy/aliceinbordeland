@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useGame } from '@/hooks/useGame'
+import { useGSAP } from '@/hooks/useGSAP'
 import type { HeartsGame, Player } from '@/types/game'
 import { validateVote, calculateVoteResults } from '@/lib/gameLogic'
 import { Users, Vote } from 'lucide-react'
@@ -16,6 +17,7 @@ interface HeartsGameProps {
 export default function HeartsGameComponent({ game, players, roomId }: HeartsGameProps) {
   const { user } = useAuth()
   const { gameState, submitVote, nextRound } = useGame(roomId)
+  const gsap = useGSAP()
   const [selectedTarget, setSelectedTarget] = useState<string | null>(null)
   const [voted, setVoted] = useState(false)
   const [revealed, setRevealed] = useState(false)
@@ -23,6 +25,9 @@ export default function HeartsGameComponent({ game, players, roomId }: HeartsGam
   const currentPlayer = players.find((p) => p.user_id === user?.id)
   const alivePlayers = players.filter((p) => p.alive && p.connected && p.user_id !== user?.id)
   const votes = (gameState?.votes as Record<string, string>) || {}
+
+  const revealResultsRef = useRef<HTMLDivElement>(null)
+  const voteButtonsRef = useRef<HTMLDivElement[]>([])
 
   useEffect(() => {
     // Check if player already voted
@@ -35,14 +40,25 @@ export default function HeartsGameComponent({ game, players, roomId }: HeartsGam
     const allVoted = alivePlayers.length > 0 && alivePlayers.every((p) => votes[p.id])
     if (allVoted && !revealed && gameState) {
       setRevealed(true)
+      // Animate reveal
+      if (revealResultsRef.current) {
+        setTimeout(() => {
+          gsap.animateReveal(revealResultsRef.current)
+        }, 100)
+      }
     }
-  }, [votes, currentPlayer, alivePlayers, revealed, gameState])
+  }, [votes, currentPlayer, alivePlayers, revealed, gameState, gsap])
 
   const handleVote = async (targetId: string) => {
     if (!currentPlayer || !gameState) return
 
     const validation = validateVote(game, gameState, currentPlayer.id, targetId, players)
     if (!validation.valid) {
+      // Shake animation for invalid vote
+      const button = voteButtonsRef.current.find((el) => el && el.dataset.playerId === targetId)
+      if (button) {
+        gsap.animateShake(button)
+      }
       alert(validation.error)
       return
     }
@@ -51,6 +67,11 @@ export default function HeartsGameComponent({ game, players, roomId }: HeartsGam
     if (result.success) {
       setSelectedTarget(targetId)
       setVoted(true)
+      // Pulse animation on successful vote
+      const button = voteButtonsRef.current.find((el) => el && el.dataset.playerId === targetId)
+      if (button) {
+        gsap.animatePulse(button, 1)
+      }
     }
   }
 
@@ -86,9 +107,13 @@ export default function HeartsGameComponent({ game, players, roomId }: HeartsGam
             <div className="space-y-4">
               <p className="text-center text-gray-300">Selecciona tu voto:</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {alivePlayers.map((player) => (
+                {alivePlayers.map((player, index) => (
                   <button
                     key={player.id}
+                    ref={(el) => {
+                      if (el) voteButtonsRef.current[index] = el
+                      el?.setAttribute('data-player-id', player.id)
+                    }}
                     onClick={() => handleVote(player.id)}
                     className="p-4 bg-[#1a1a1a] border-2 border-red-600 rounded-lg hover:bg-red-600/20 transition-colors text-left"
                   >
@@ -111,7 +136,7 @@ export default function HeartsGameComponent({ game, players, roomId }: HeartsGam
           )}
         </>
       ) : (
-        <div className="space-y-4">
+        <div ref={revealResultsRef} className="space-y-4">
           <div className="p-4 bg-red-900/20 border border-red-600 rounded-lg">
             <p className="text-red-400 font-bold mb-4">Resultados de la votación:</p>
             <div className="space-y-2">

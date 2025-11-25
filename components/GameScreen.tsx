@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useRoom } from '@/hooks/useRoom'
 import { useGame } from '@/hooks/useGame'
+import { useGSAP } from '@/hooks/useGSAP'
 import { endGame, leaveRoom, updatePlayerConnection } from '@/lib/roomManager'
 import { checkGameCompletion } from '@/lib/gameLogic'
 import HeartsGame from './games/HeartsGame'
@@ -26,10 +27,15 @@ export default function GameScreen({ roomId, roomCode }: GameScreenProps) {
   const { user } = useAuth()
   const { room, players } = useRoom(roomId)
   const { gameState, updateTimer } = useGame(roomId)
+  const gsap = useGSAP()
 
   const isHost = room?.host_id === user?.id
   const game = room?.current_game as Game | null
   const alivePlayers = players.filter((p) => p.alive && p.connected)
+
+  const gameCardRef = useRef<HTMLDivElement>(null)
+  const timerRef = useRef<HTMLDivElement>(null)
+  const gameContentRef = useRef<HTMLDivElement>(null)
 
   // Update connection status
   useEffect(() => {
@@ -49,12 +55,30 @@ export default function GameScreen({ roomId, roomCode }: GameScreenProps) {
     }
   }, [user, roomId])
 
+  // Animate game card on mount
+  useEffect(() => {
+    if (gameCardRef.current && game) {
+      gsap.animateCardFlip(gameCardRef.current)
+    }
+    if (gameContentRef.current) {
+      gsap.animateStaggerFadeIn([gameContentRef.current])
+    }
+  }, [game, gsap])
+
   // Timer countdown
   useEffect(() => {
     if (gameState?.timer !== undefined) {
       setTimer(gameState.timer)
     }
   }, [gameState?.timer])
+
+  // Animate timer when low
+  useEffect(() => {
+    if (timer > 0 && timer <= 60 && timerRef.current) {
+      // Pulse animation when timer is low
+      gsap.animatePulse(timerRef.current, 1)
+    }
+  }, [timer, gsap])
 
   useEffect(() => {
     if (timer <= 0 || !gameState) return
@@ -134,7 +158,7 @@ export default function GameScreen({ roomId, roomCode }: GameScreenProps) {
       {/* Header */}
       <div className="glass border-b border-red-600/30 p-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
+          <div ref={gameCardRef} className="flex items-center gap-4">
             <div className="text-3xl">{suitEmoji}</div>
             <div>
               <h1 className="text-xl font-bold text-white">{game.card}</h1>
@@ -144,7 +168,7 @@ export default function GameScreen({ roomId, roomCode }: GameScreenProps) {
 
           <div className="flex items-center gap-6">
             {/* Timer */}
-            <div className="flex items-center gap-2">
+            <div ref={timerRef} className="flex items-center gap-2">
               <Clock className={`w-5 h-5 ${timer < 60 ? 'text-red-500' : 'text-gray-400'}`} />
               <span className={`font-mono font-bold ${timer < 60 ? 'text-red-500' : 'text-white'}`}>
                 {Math.floor(timer / 60)}:{(timer % 60).toString().padStart(2, '0')}
@@ -173,7 +197,7 @@ export default function GameScreen({ roomId, roomCode }: GameScreenProps) {
 
       {/* Main Game Area */}
       <div className="flex-1 p-4 overflow-y-auto">
-        <div className="max-w-4xl mx-auto">
+        <div ref={gameContentRef} className="max-w-4xl mx-auto">
           {game.suit === 'hearts' && (
             <HeartsGame game={game as any} players={players} roomId={roomId} />
           )}

@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useRoom } from '@/hooks/useRoom'
 import { nextGame, leaveRoom } from '@/lib/roomManager'
 import { calculateGameResults } from '@/lib/gameLogic'
+import { useGSAP } from '@/hooks/useGSAP'
 import { Trophy, Skull, Users, LogOut, Play, Home } from 'lucide-react'
 
 interface ResultScreenProps {
@@ -19,9 +20,17 @@ export default function ResultScreen({ roomId, roomCode }: ResultScreenProps) {
   const router = useRouter()
   const { user } = useAuth()
   const { room, players } = useRoom(roomId)
+  const gsap = useGSAP()
 
   const isHost = room?.host_id === user?.id
   const game = room?.current_game as any
+
+  const gameClearRef = useRef<HTMLDivElement>(null)
+  const gameOverRef = useRef<HTMLDivElement>(null)
+  const survivorsRef = useRef<HTMLDivElement>(null)
+  const eliminatedRef = useRef<HTMLDivElement>(null)
+  const eliminatedItemsRef = useRef<(HTMLDivElement | null)[]>([])
+  const survivorItemsRef = useRef<(HTMLDivElement | null)[]>([])
 
   if (!game || !room) {
     return (
@@ -35,6 +44,39 @@ export default function ResultScreen({ roomId, roomCode }: ResultScreenProps) {
   }
 
   const results = calculateGameResults(game, { timer: 0, round: 1, votes: {}, answers: {}, current_turn: null, id: '', room_id: roomId, updated_at: '' }, players)
+
+  // Animate results on mount
+  useEffect(() => {
+    if (results.gameClear && gameClearRef.current) {
+      gsap.animateGameClear(gameClearRef.current)
+    } else if (!results.gameClear && gameOverRef.current) {
+      gsap.animateGameOver(gameOverRef.current)
+    }
+  }, [results.gameClear, gsap])
+
+  // Animate survivors
+  useEffect(() => {
+    if (survivorsRef.current && survivorItemsRef.current.length > 0) {
+      const validItems = survivorItemsRef.current.filter((item) => item !== null)
+      if (validItems.length > 0) {
+        gsap.animateStaggerFadeIn(validItems)
+      }
+    }
+  }, [results.survivors, gsap])
+
+  // Animate eliminated players with death animation
+  useEffect(() => {
+    if (eliminatedItemsRef.current.length > 0) {
+      const validItems = eliminatedItemsRef.current.filter((item) => item !== null)
+      if (validItems.length > 0) {
+        validItems.forEach((element, index) => {
+          setTimeout(() => {
+            gsap.animateDeath(element)
+          }, index * 200) // Stagger deaths
+        })
+      }
+    }
+  }, [results.eliminated, gsap])
 
   const handleNextGame = async () => {
     if (!isHost || !user) return
@@ -70,21 +112,21 @@ export default function ResultScreen({ roomId, roomCode }: ResultScreenProps) {
         {/* Result Header */}
         <div className="text-center space-y-4">
           {results.gameClear ? (
-            <>
+            <div ref={gameClearRef}>
               <div className="flex items-center justify-center gap-3">
                 <Trophy className="w-12 h-12 text-yellow-500" />
                 <h1 className="text-4xl font-bold text-green-500">GAME CLEAR</h1>
               </div>
               <p className="text-gray-400">¡Al menos un jugador sobrevivió!</p>
-            </>
+            </div>
           ) : (
-            <>
+            <div ref={gameOverRef}>
               <div className="flex items-center justify-center gap-3">
                 <Skull className="w-12 h-12 text-red-500" />
                 <h1 className="text-4xl font-bold text-red-500">GAME OVER</h1>
               </div>
               <p className="text-gray-400">Todos los jugadores fueron eliminados</p>
-            </>
+            </div>
           )}
         </div>
 
@@ -99,15 +141,18 @@ export default function ResultScreen({ roomId, roomCode }: ResultScreenProps) {
 
         {/* Survivors */}
         {results.survivors.length > 0 && (
-          <div className="glass rounded-lg p-6">
+          <div ref={survivorsRef} className="glass rounded-lg p-6">
             <div className="flex items-center gap-2 mb-4">
               <Trophy className="w-5 h-5 text-yellow-500" />
               <h2 className="text-xl font-bold text-white">Sobrevivientes</h2>
             </div>
             <div className="space-y-2">
-              {results.survivors.map((player) => (
+              {results.survivors.map((player, index) => (
                 <div
                   key={player.id}
+                  ref={(el) => {
+                    if (el) survivorItemsRef.current[index] = el
+                  }}
                   className="flex items-center justify-between p-4 bg-green-900/20 border border-green-600 rounded-lg"
                 >
                   <div className="flex items-center gap-3">
@@ -130,16 +175,19 @@ export default function ResultScreen({ roomId, roomCode }: ResultScreenProps) {
 
         {/* Eliminated */}
         {results.eliminated.length > 0 && (
-          <div className="glass rounded-lg p-6">
+          <div ref={eliminatedRef} className="glass rounded-lg p-6">
             <div className="flex items-center gap-2 mb-4">
               <Skull className="w-5 h-5 text-red-500" />
               <h2 className="text-xl font-bold text-white">Eliminados</h2>
             </div>
             <div className="space-y-2">
-              {results.eliminated.map((player) => (
+              {results.eliminated.map((player, index) => (
                 <div
                   key={player.id}
-                  className="flex items-center justify-between p-4 bg-red-900/20 border border-red-600 rounded-lg opacity-60"
+                  ref={(el) => {
+                    if (el) eliminatedItemsRef.current[index] = el
+                  }}
+                  className="flex items-center justify-between p-4 bg-red-900/20 border border-red-600 rounded-lg"
                 >
                   <div className="flex items-center gap-3">
                     <Skull className="w-5 h-5 text-red-500" />
