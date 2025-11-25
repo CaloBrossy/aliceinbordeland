@@ -111,8 +111,10 @@ export default function HeartsGameComponent({ game, players, roomId }: HeartsGam
                   <button
                     key={player.id}
                     ref={(el) => {
-                      if (el) voteButtonsRef.current[index] = el
-                      el?.setAttribute('data-player-id', player.id)
+                      if (el) {
+                        voteButtonsRef.current[index] = el
+                        el.setAttribute('data-player-id', player.id)
+                      }
                     }}
                     onClick={() => handleVote(player.id)}
                     className="p-4 bg-[#1a1a1a] border-2 border-red-600 rounded-lg hover:bg-red-600/20 transition-colors text-left"

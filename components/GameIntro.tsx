@@ -24,6 +24,7 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
   const difficultyRef = useRef<HTMLDivElement>(null)
   const situationRef = useRef<HTMLDivElement>(null)
   const rulesRef = useRef<HTMLDivElement>(null)
+  const ruleItemsRef = useRef<(HTMLLIElement | null)[]>([])
   const conditionsRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<HTMLDivElement>(null)
   const countdownRef = useRef<HTMLDivElement>(null)
@@ -108,14 +109,28 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
       .call(() => setCurrentStep(2))
       .fromTo(
         rulesRef.current,
-        { opacity: 0, y: 20 },
+        { opacity: 0 },
         {
           opacity: 1,
-          y: 0,
-          duration: 0.8,
+          duration: 0.3,
           ease: 'power2.out',
         }
       )
+      // Animate each rule item
+      .to(ruleItemsRef.current, {
+        opacity: 1,
+        x: 0,
+        duration: 0.5,
+        stagger: 0.15,
+        ease: 'power2.out',
+        onStart: () => {
+          ruleItemsRef.current.forEach((el) => {
+            if (el) {
+              gsap.set(el, { opacity: 0, x: -30 })
+            }
+          })
+        },
+      })
       // Victory/Defeat conditions
       .call(() => setCurrentStep(3))
       .fromTo(
@@ -505,7 +520,14 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
             </h3>
             <ul className="space-y-3">
               {content.rules.map((rule, index) => (
-                <li key={index} className="text-gray-300 flex items-start gap-3">
+                <li
+                  key={index}
+                  ref={(el) => {
+                    if (el) ruleItemsRef.current[index] = el
+                  }}
+                  className="text-gray-300 flex items-start gap-3"
+                  style={{ opacity: 0 }}
+                >
                   <span
                     className="text-red-500 font-bold text-xl min-w-[30px]"
                     style={{
