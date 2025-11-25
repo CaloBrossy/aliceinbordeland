@@ -319,7 +319,8 @@ export default function ResultScreen({ roomId, roomCode }: ResultScreenProps) {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </>
   )
 }
 
