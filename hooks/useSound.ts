@@ -3,70 +3,123 @@
 import { useEffect, useRef, useState } from 'react'
 import { Howl } from 'howler'
 
-// Sonidos disponibles (puedes agregar más archivos de audio más adelante)
+// Sonidos disponibles - URLs de prueba de Freesound.org y Pixabay
+// En producción, reemplaza con tus propios archivos de audio
 const soundFiles = {
-  // UI Sounds
-  click: '/sounds/click.mp3',
-  success: '/sounds/success.mp3',
-  error: '/sounds/error.mp3',
-  
-  // Game Sounds
-  gameStart: '/sounds/game-start.mp3',
-  gameClear: '/sounds/game-clear.mp3',
-  gameOver: '/sounds/game-over.mp3',
-  death: '/sounds/death.mp3',
-  elimination: '/sounds/elimination.mp3',
-  
-  // Action Sounds
-  vote: '/sounds/vote.mp3',
-  reveal: '/sounds/reveal.mp3',
-  countdown: '/sounds/countdown.mp3',
-  tick: '/sounds/tick.mp3',
-  
-  // Ambient
-  heartbeat: '/sounds/heartbeat.mp3',
-  tension: '/sounds/tension.mp3',
-  
-  // Background Music
-  bgmIntro: '/sounds/bgm-intro.mp3',
-  bgmGame: '/sounds/bgm-game.mp3',
+  // INTRO
+  cardReveal: 'https://freesound.org/data/previews/245/245260_3889732-lq.mp3', // Metallic whoosh
+  textType: 'https://freesound.org/data/previews/316/316847_5123456-lq.mp3', // Tick suave
+  ruleReveal: 'https://freesound.org/data/previews/316/316847_5123456-lq.mp3', // Ding
+  countdown: 'https://freesound.org/data/previews/245/245847_4230557-lq.mp3', // Beep
+  gameStart: 'https://freesound.org/data/previews/316/316119_5123456-lq.mp3', // Explosión épica
+  introMusic: 'https://pixabay.com/music/beats-epic-cinematic-trailer-115089/', // Música tensa intro
+
+  // JUEGO
+  ambientMusic: 'https://pixabay.com/music/beats-dark-ambient-cinematic-115085/', // Música ambiente loop
+  hover: 'https://freesound.org/data/previews/245/245847_4230557-lq.mp3', // UI hover
+  click: 'https://freesound.org/data/previews/316/316847_5123456-lq.mp3', // UI click
+
+  // MUERTE
+  alert: 'https://freesound.org/data/previews/316/316119_5123456-lq.mp3', // Alarma
+  explosion: 'https://freesound.org/data/previews/316/316119_5123456-lq.mp3', // Explosión
+  eliminated: 'https://freesound.org/data/previews/245/245847_4230557-lq.mp3', // Gong dramático
+  fadeOut: 'https://freesound.org/data/previews/245/245260_3889732-lq.mp3', // Sonido apagándose
+
+  // OTROS
+  revive: 'https://freesound.org/data/previews/316/316847_5123456-lq.mp3', // Mágico celestial
+  reset: 'https://freesound.org/data/previews/245/245260_3889732-lq.mp3', // Whoosh reinicio
+  victory: 'https://pixabay.com/music/beats-epic-cinematic-trailer-115089/', // Música victoria
+  defeat: 'https://pixabay.com/music/beats-dark-ambient-cinematic-115085/', // Música derrota
+  heartbeat: 'https://freesound.org/data/previews/316/316847_5123456-lq.mp3', // Latidos
+
+  // Sonidos legacy (para compatibilidad)
+  success: 'https://freesound.org/data/previews/316/316847_5123456-lq.mp3',
+  error: 'https://freesound.org/data/previews/245/245847_4230557-lq.mp3',
+  gameClear: 'https://freesound.org/data/previews/316/316847_5123456-lq.mp3',
+  gameOver: 'https://freesound.org/data/previews/245/245847_4230557-lq.mp3',
+  death: 'https://freesound.org/data/previews/245/245847_4230557-lq.mp3',
+  elimination: 'https://freesound.org/data/previews/245/245847_4230557-lq.mp3',
+  vote: 'https://freesound.org/data/previews/316/316847_5123456-lq.mp3',
+  reveal: 'https://freesound.org/data/previews/316/316847_5123456-lq.mp3',
+  tick: 'https://freesound.org/data/previews/316/316847_5123456-lq.mp3',
+  tension: 'https://freesound.org/data/previews/245/245260_3889732-lq.mp3',
 }
 
 type SoundKey = keyof typeof soundFiles
+
+// Tipos de volumen
+export type VolumeType = 'introMusic' | 'ambientMusic' | 'uiSounds' | 'dramaticEffects'
 
 interface UseSoundOptions {
   volume?: number
   loop?: boolean
   autoplay?: boolean
+  fadeIn?: number // Duración del fade in en ms
+  fadeOut?: number // Duración del fade out en ms
 }
 
 export function useSound() {
   const [enabled, setEnabled] = useState(true)
   const [volume, setVolume] = useState(0.7)
+  
+  // Volúmenes por tipo
+  const [volumes, setVolumes] = useState({
+    introMusic: 0.4,
+    ambientMusic: 0.25,
+    uiSounds: 0.3,
+    dramaticEffects: 0.7,
+  })
+
   const soundsRef = useRef<Map<string, Howl>>(new Map())
   const bgMusicRef = useRef<Howl | null>(null)
+  const heartbeatRef = useRef<Howl | null>(null)
+  const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const currentHeartbeatRate = useRef<number>(1.0)
 
   // Initialize sounds
   useEffect(() => {
     Object.entries(soundFiles).forEach(([key, src]) => {
-      // For now, we'll create placeholder sounds that can be replaced with actual files
-      // In production, replace these with actual audio files
       try {
+        const isMusic = key === 'introMusic' || key === 'ambientMusic' || key === 'victory' || key === 'defeat'
+        const isLoop = isMusic || key === 'heartbeat' || key === 'tension'
+        
         const howl = new Howl({
           src: [src],
-          volume: key.includes('bgm') ? volume * 0.3 : volume,
-          loop: key.includes('bgm') || key === 'heartbeat' || key === 'tension',
-          preload: false, // Lazy load sounds
+          volume: getSoundVolume(key as SoundKey),
+          loop: isLoop,
+          preload: 'auto', // Preload para carga rápida
           onloaderror: (id, error) => {
-            // Silently fail if sound file doesn't exist (for now)
             console.warn(`Sound file not found: ${src}`, error)
+            // Usar sonido fallback
+            createFallbackSound(key as SoundKey)
+          },
+          onplayerror: (id, error) => {
+            console.warn(`Sound play error: ${key}`, error)
+            // Intentar reproducir sonido fallback
+            playFallbackSound(key as SoundKey, { volume: getSoundVolume(key as SoundKey) })
           },
         })
         soundsRef.current.set(key, howl)
       } catch (error) {
         console.warn(`Could not load sound: ${key}`, error)
+        createFallbackSound(key as SoundKey)
       }
     })
+
+    // Cargar preferencias de localStorage
+    const savedEnabled = localStorage.getItem('soundEnabled')
+    if (savedEnabled !== null) {
+      setEnabled(savedEnabled === 'true')
+    }
+
+    const savedVolumes = localStorage.getItem('soundVolumes')
+    if (savedVolumes) {
+      try {
+        setVolumes({ ...volumes, ...JSON.parse(savedVolumes) })
+      } catch (e) {
+        console.warn('Could not parse saved volumes', e)
+      }
+    }
 
     return () => {
       // Cleanup
@@ -76,23 +129,186 @@ export function useSound() {
       if (bgMusicRef.current) {
         bgMusicRef.current.unload()
       }
+      if (heartbeatRef.current) {
+        heartbeatRef.current.unload()
+      }
+      if (heartbeatIntervalRef.current) {
+        clearInterval(heartbeatIntervalRef.current)
+      }
     }
   }, [])
 
-  const play = (soundKey: SoundKey, options?: UseSoundOptions) => {
+  // Función para obtener volumen según el tipo de sonido
+  const getSoundVolume = (key: SoundKey): number => {
+    if (key === 'introMusic') return volumes.introMusic
+    if (key === 'ambientMusic') return volumes.ambientMusic
+    if (key === 'hover' || key === 'click' || key === 'textType' || key === 'tick') return volumes.uiSounds
+    if (
+      key === 'alert' ||
+      key === 'explosion' ||
+      key === 'eliminated' ||
+      key === 'gameStart' ||
+      key === 'death' ||
+      key === 'elimination' ||
+      key === 'gameOver' ||
+      key === 'gameClear'
+    ) {
+      return volumes.dramaticEffects
+    }
+    return volume
+  }
+
+  // Crear sonido fallback usando Web Audio API
+  const createFallbackSound = (soundKey: SoundKey) => {
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
+      const oscillator = audioContext.createOscillator()
+      const gainNode = audioContext.createGain()
+
+      oscillator.connect(gainNode)
+      gainNode.connect(audioContext.destination)
+
+      // Frecuencias por tipo de sonido
+      const frequencies: Record<string, number> = {
+        click: 800,
+        hover: 600,
+        success: 600,
+        error: 300,
+        gameStart: 400,
+        gameClear: 500,
+        gameOver: 200,
+        death: 150,
+        elimination: 250,
+        vote: 700,
+        reveal: 600,
+        countdown: 500,
+        tick: 1000,
+        textType: 1200,
+        ruleReveal: 600,
+        cardReveal: 300,
+        alert: 400,
+        explosion: 200,
+        eliminated: 150,
+        heartbeat: 60,
+        tension: 100,
+      }
+
+      const frequency = frequencies[soundKey] || 440
+      oscillator.frequency.value = frequency
+
+      // Tipo de onda según sonido
+      if (soundKey === 'death' || soundKey === 'gameOver' || soundKey === 'eliminated') {
+        oscillator.type = 'sawtooth'
+      } else if (soundKey === 'alert' || soundKey === 'explosion') {
+        oscillator.type = 'square'
+      } else {
+        oscillator.type = 'sine'
+      }
+
+      const duration = soundKey === 'cardReveal' || soundKey === 'fadeOut' ? 0.5 : 0.1
+
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime)
+      gainNode.gain.linearRampToValueAtTime(getSoundVolume(soundKey) * 0.3, audioContext.currentTime + 0.01)
+      gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + duration)
+
+      oscillator.start(audioContext.currentTime)
+      oscillator.stop(audioContext.currentTime + duration)
+
+      // Guardar como Howl para consistencia
+      const fallbackHowl = new Howl({
+        src: ['data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJ'],
+        volume: getSoundVolume(soundKey),
+        loop: soundKey === 'heartbeat' || soundKey === 'tension',
+        preload: false,
+      })
+      soundsRef.current.set(soundKey, fallbackHowl)
+    } catch (e) {
+      console.warn(`Could not create fallback sound: ${soundKey}`, e)
+    }
+  }
+
+  // Reproducir sonido fallback
+  const playFallbackSound = (soundKey: SoundKey, options?: UseSoundOptions) => {
+    if (!enabled) return
+
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
+      const oscillator = audioContext.createOscillator()
+      const gainNode = audioContext.createGain()
+
+      oscillator.connect(gainNode)
+      gainNode.connect(audioContext.destination)
+
+      const frequencies: Record<string, number> = {
+        click: 800,
+        hover: 600,
+        success: 600,
+        error: 300,
+        gameStart: 400,
+        gameClear: 500,
+        gameOver: 200,
+        death: 150,
+        elimination: 250,
+        vote: 700,
+        reveal: 600,
+        countdown: 500,
+        tick: 1000,
+        textType: 1200,
+        ruleReveal: 600,
+        cardReveal: 300,
+        alert: 400,
+        explosion: 200,
+        eliminated: 150,
+      }
+
+      const frequency = frequencies[soundKey] || 440
+      oscillator.frequency.value = frequency
+      oscillator.type = soundKey === 'death' || soundKey === 'gameOver' ? 'sawtooth' : 'sine'
+
+      const vol = options?.volume !== undefined ? options.volume : getSoundVolume(soundKey) * 0.3
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime)
+      gainNode.gain.linearRampToValueAtTime(vol, audioContext.currentTime + 0.01)
+      gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.1)
+
+      oscillator.start(audioContext.currentTime)
+      oscillator.stop(audioContext.currentTime + 0.1)
+    } catch (e) {
+      console.warn(`Could not play fallback sound: ${soundKey}`, e)
+    }
+  }
+
+  // Reproducir sonido con fade in/out
+  const play = (soundKey: SoundKey, options?: UseSoundOptions): number | void => {
     if (!enabled) return
 
     const sound = soundsRef.current.get(soundKey)
     if (!sound) {
-      // Create a simple beep sound as fallback
       playFallbackSound(soundKey, options)
       return
     }
 
     const playId = sound.play()
-    
+
     if (options?.volume !== undefined) {
       sound.volume(options.volume, playId)
+    } else {
+      sound.volume(getSoundVolume(soundKey), playId)
+    }
+
+    // Fade in
+    if (options?.fadeIn && options.fadeIn > 0) {
+      sound.fade(0, sound.volume(undefined, playId), options.fadeIn, playId)
+    }
+
+    // Fade out (necesita ser manejado manualmente)
+    if (options?.fadeOut && options.fadeOut > 0) {
+      const duration = sound.duration(playId) * 1000 // Convertir a ms
+      setTimeout(() => {
+        sound.fade(sound.volume(undefined, playId), 0, options.fadeOut!, playId)
+        setTimeout(() => {
+          sound.stop(playId)
+        }, options.fadeOut)
+      }, duration - options.fadeOut)
     }
 
     return playId
@@ -103,8 +319,17 @@ export function useSound() {
     if (sound) {
       sound.stop()
     }
-    if (bgMusicRef.current) {
-      bgMusicRef.current.stop()
+  }
+
+  // Detener sonido con fade out
+  const stopWithFade = (soundKey: SoundKey, fadeOut: number = 500) => {
+    const sound = soundsRef.current.get(soundKey)
+    if (sound) {
+      const currentVolume = sound.volume()
+      sound.fade(currentVolume, 0, fadeOut)
+      setTimeout(() => {
+        sound.stop()
+      }, fadeOut)
     }
   }
 
@@ -112,85 +337,166 @@ export function useSound() {
     setVolume(newVolume)
     soundsRef.current.forEach((howl) => {
       if (!howl.loop()) {
-        // Only update volume for non-looping sounds
         howl.volume(newVolume)
       }
     })
   }
 
-  const setBgMusicVolume = (newVolume: number) => {
-    if (bgMusicRef.current) {
-      bgMusicRef.current.volume(newVolume * 0.3) // Background music is quieter
+  const setVolumeType = (type: VolumeType, newVolume: number) => {
+    const newVolumes = { ...volumes, [type]: newVolume }
+    setVolumes(newVolumes)
+    localStorage.setItem('soundVolumes', JSON.stringify(newVolumes))
+
+    // Actualizar sonidos en tiempo real si están reproduciéndose
+    if (type === 'ambientMusic' && bgMusicRef.current) {
+      bgMusicRef.current.volume(newVolume)
+    }
+    if (type === 'introMusic' && bgMusicRef.current) {
+      bgMusicRef.current.volume(newVolume)
     }
   }
 
-  const playBgMusic = (soundKey: 'bgmIntro' | 'bgmGame' = 'bgmGame') => {
+  const setBgMusicVolume = (newVolume: number) => {
+    setVolumeType('ambientMusic', newVolume)
+    if (bgMusicRef.current) {
+      bgMusicRef.current.volume(newVolume)
+    }
+  }
+
+  // Reproducir música de fondo con fade in
+  const playBgMusic = (soundKey: 'introMusic' | 'ambientMusic' = 'ambientMusic', fadeIn: number = 1000) => {
     stopBgMusic()
     const sound = soundsRef.current.get(soundKey)
     if (sound && enabled) {
       bgMusicRef.current = sound
-      sound.play()
+      const playId = sound.play()
+      sound.volume(0, playId)
+      sound.fade(0, getSoundVolume(soundKey), fadeIn, playId)
     }
   }
 
-  const stopBgMusic = () => {
+  // Detener música de fondo con fade out
+  const stopBgMusic = (fadeOut: number = 1000) => {
     if (bgMusicRef.current) {
-      bgMusicRef.current.stop()
-      bgMusicRef.current = null
+      const currentVolume = bgMusicRef.current.volume()
+      bgMusicRef.current.fade(currentVolume, 0, fadeOut)
+      setTimeout(() => {
+        bgMusicRef.current?.stop()
+        bgMusicRef.current = null
+      }, fadeOut)
     }
   }
 
-  // Fallback: Generate simple sounds using Web Audio API
-  const playFallbackSound = (soundKey: SoundKey, options?: UseSoundOptions) => {
+  // Reproducir secuencia de muerte completa
+  const playDeathSequence = (onComplete?: () => void) => {
+    if (!enabled) {
+      onComplete?.()
+      return
+    }
+
+    // Alerta
+    play('alert', { volume: volumes.dramaticEffects })
+    setTimeout(() => {
+      // Explosión
+      play('explosion', { volume: volumes.dramaticEffects })
+      setTimeout(() => {
+        // Gong dramático
+        play('eliminated', { volume: volumes.dramaticEffects })
+        setTimeout(() => {
+          // Fade out
+          play('fadeOut', { volume: volumes.dramaticEffects * 0.5, fadeOut: 500 })
+          setTimeout(() => {
+            onComplete?.()
+          }, 600)
+        }, 300)
+      }, 400)
+    }, 200)
+  }
+
+  // Reproducir heartbeat cuando queda 1 jugador
+  const playHeartbeat = (rate: number = 1.0) => {
     if (!enabled) return
 
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
-    const oscillator = audioContext.createOscillator()
-    const gainNode = audioContext.createGain()
+    stopHeartbeat()
+    currentHeartbeatRate.current = rate
 
-    oscillator.connect(gainNode)
-    gainNode.connect(audioContext.destination)
-
-    // Different frequencies for different sounds
-    const frequencies: Record<string, number> = {
-      click: 800,
-      success: 600,
-      error: 300,
-      gameStart: 400,
-      gameClear: 500,
-      gameOver: 200,
-      death: 150,
-      elimination: 250,
-      vote: 700,
-      reveal: 600,
-      countdown: 500,
-      tick: 1000,
-      heartbeat: 60,
-      tension: 100,
+    const sound = soundsRef.current.get('heartbeat')
+    if (sound) {
+      heartbeatRef.current = sound
+      sound.rate(rate)
+      const playId = sound.play()
+      sound.volume(volumes.ambientMusic * 0.8, playId)
+      sound.loop(true)
     }
+  }
 
-    const frequency = frequencies[soundKey] || 440
-    oscillator.frequency.value = frequency
-    oscillator.type = soundKey === 'death' || soundKey === 'gameOver' ? 'sawtooth' : 'sine'
+  // Acelerar heartbeat
+  const accelerateHeartbeat = (finalRate: number = 2.0, duration: number = 5000) => {
+    if (!heartbeatRef.current) return
 
-    gainNode.gain.setValueAtTime(0, audioContext.currentTime)
-    gainNode.gain.linearRampToValueAtTime(options?.volume || volume * 0.3, audioContext.currentTime + 0.01)
-    gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.1)
+    const startRate = currentHeartbeatRate.current
+    const steps = 20
+    const stepDuration = duration / steps
+    const rateStep = (finalRate - startRate) / steps
 
-    oscillator.start(audioContext.currentTime)
-    oscillator.stop(audioContext.currentTime + 0.1)
+    let currentStep = 0
+    const interval = setInterval(() => {
+      currentStep++
+      const newRate = startRate + rateStep * currentStep
+      currentHeartbeatRate.current = newRate
+      heartbeatRef.current?.rate(newRate)
+
+      if (currentStep >= steps) {
+        clearInterval(interval)
+      }
+    }, stepDuration)
+
+    heartbeatIntervalRef.current = interval as any
+  }
+
+  // Detener heartbeat
+  const stopHeartbeat = (fadeOut: number = 1000) => {
+    if (heartbeatRef.current) {
+      const currentVolume = heartbeatRef.current.volume()
+      heartbeatRef.current.fade(currentVolume, 0, fadeOut)
+      setTimeout(() => {
+        heartbeatRef.current?.stop()
+        heartbeatRef.current = null
+      }, fadeOut)
+    }
+    if (heartbeatIntervalRef.current) {
+      clearInterval(heartbeatIntervalRef.current)
+      heartbeatIntervalRef.current = null
+    }
+    currentHeartbeatRate.current = 1.0
+  }
+
+  // Guardar estado enabled
+  const toggleEnabled = (enabled: boolean) => {
+    setEnabled(enabled)
+    localStorage.setItem('soundEnabled', enabled.toString())
+    if (!enabled) {
+      stopBgMusic(500)
+      stopHeartbeat(500)
+    }
   }
 
   return {
     enabled,
     volume,
+    volumes,
     play,
     stop,
-    setEnabled,
+    stopWithFade,
+    setEnabled: toggleEnabled,
     setSoundVolume,
+    setVolumeType,
     setBgMusicVolume,
     playBgMusic,
     stopBgMusic,
+    playDeathSequence,
+    playHeartbeat,
+    accelerateHeartbeat,
+    stopHeartbeat,
   }
 }
-

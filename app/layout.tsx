@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SoundProvider } from "@/components/SoundProvider";
+import SoundControls from "@/components/SoundControls";
+import ParticleBackground from "@/components/ParticleBackground";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,7 +31,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <SoundProvider>
+          <ParticleBackground particleCount={50} color="#ffffff" opacity={0.3} />
           {children}
+          <SoundControls />
         </SoundProvider>
       </body>
     </html>
