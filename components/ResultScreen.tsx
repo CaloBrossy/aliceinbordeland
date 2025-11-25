@@ -77,20 +77,40 @@ export default function ResultScreen({ roomId, roomCode }: ResultScreenProps) {
     }
   }, [results.survivors, gsap])
 
-  // Animate eliminated players with death animation
+  // Animate eliminated players with epic death animation
   useEffect(() => {
-    if (eliminatedItemsRef.current.length > 0) {
+    if (results.eliminated.length > 0) {
+      // Play death animations sequentially for each eliminated player
+      results.eliminated.forEach((player, index) => {
+        if (playedDeaths.has(player.id)) return
+
+        setTimeout(() => {
+          setDeathPlayerName(player.name)
+          setShowDeathAnimation(true)
+          setPlayedDeaths((prev) => new Set(prev).add(player.id))
+        }, index * 2500) // 2.5 seconds between each death animation
+      })
+    }
+  }, [results.eliminated, playedDeaths])
+
+  // Animate eliminated cards after death animation completes
+  useEffect(() => {
+    if (eliminatedItemsRef.current.length > 0 && !showDeathAnimation) {
       const validItems = eliminatedItemsRef.current.filter((item) => item !== null)
       if (validItems.length > 0) {
         validItems.forEach((element, index) => {
           setTimeout(() => {
             gsap.animateDeath(element)
-            sound.play('death', { volume: 0.6 })
-          }, index * 200) // Stagger deaths
+          }, index * 100) // Stagger card animations
         })
       }
     }
-  }, [results.eliminated, gsap, sound])
+  }, [results.eliminated, showDeathAnimation, gsap])
+
+  const handleDeathAnimationComplete = () => {
+    setShowDeathAnimation(false)
+    setDeathPlayerName(null)
+  }
 
   const handleNextGame = async () => {
     if (!isHost || !user) return
