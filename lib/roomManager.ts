@@ -381,13 +381,21 @@ export async function createTestPlayers(roomId: string, count: number = 2): Prom
     // Generate test player names
     const testNames = ['Bot Alice', 'Bot Bob', 'Bot Charlie', 'Bot Diana', 'Bot Eve', 'Bot Frank', 'Bot Grace', 'Bot Henry']
     
-    // Create test players with fake user_ids
+    // Helper function to generate a valid UUID v4
+    function generateUUID(): string {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0
+        const v = c === 'x' ? r : (r & 0x3 | 0x8)
+        return v.toString(16)
+      })
+    }
+    
+    // Create test players with valid UUID user_ids
     const testPlayers = []
     for (let i = 0; i < count; i++) {
-      const fakeUserId = `test-${Date.now()}-${Math.random().toString(36).substring(7)}`
       testPlayers.push({
         room_id: roomId,
-        user_id: fakeUserId,
+        user_id: generateUUID(),
         name: testNames[i] || `Bot ${i + 1}`,
         alive: true,
         cards: 0,
