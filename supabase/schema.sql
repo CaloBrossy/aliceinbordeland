@@ -106,9 +106,20 @@ CREATE POLICY "Authenticated users can read players" ON players
   USING (auth.role() = 'authenticated' OR auth.role() = 'anon');
 
 -- Anyone can insert themselves as a player
+-- Also allow host to insert players in their room (for test players/bots)
 CREATE POLICY "Anyone can join as player" ON players
   FOR INSERT
-  WITH CHECK (user_id = auth.uid()::text::uuid OR user_id::text = auth.uid()::text);
+  WITH CHECK (
+    -- User can insert themselves
+    user_id = auth.uid()::text::uuid OR user_id::text = auth.uid()::text
+    OR
+    -- Host can insert players in their room (for test players)
+    EXISTS (
+      SELECT 1 FROM rooms r
+      WHERE r.id = players.room_id
+      AND (r.host_id = auth.uid()::text::uuid OR r.host_id::text = auth.uid()::text)
+    )
+  );
 
 -- Players can update themselves
 CREATE POLICY "Players can update themselves" ON players
