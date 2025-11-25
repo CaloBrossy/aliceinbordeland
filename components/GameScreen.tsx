@@ -45,6 +45,7 @@ export default function GameScreen({ roomId, roomCode }: GameScreenProps) {
   const timerTextRef = useRef<HTMLSpanElement>(null)
   const gameContentRef = useRef<HTMLDivElement>(null)
   const playersGridRef = useRef<HTMLDivElement>(null)
+  const alertPlayedRef = useRef(false)
 
   // Update connection status
   useEffect(() => {
@@ -142,7 +143,20 @@ export default function GameScreen({ roomId, roomCode }: GameScreenProps) {
     }
   }, [timer, gsap, sound])
 
-  // Play tick sound for countdown
+  // Play alert sound when timer is very low (últimos 15 segundos, solo una vez)
+  useEffect(() => {
+    if (timer > 0 && timer <= 15 && timer > 10 && !alertPlayedRef.current) {
+      // Reproducir alert una vez cuando entra en el rango de 15-10 segundos
+      sound.play('alert', { volume: 0.6 })
+      alertPlayedRef.current = true
+    }
+    // Reset cuando el timer sube de nuevo (por si acaso)
+    if (timer > 15) {
+      alertPlayedRef.current = false
+    }
+  }, [timer, sound])
+
+  // Play tick sound for countdown (últimos 10 segundos)
   useEffect(() => {
     if (timer > 0 && timer <= 10) {
       const tickInterval = setInterval(() => {

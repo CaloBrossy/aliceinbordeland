@@ -18,7 +18,7 @@ export default function RoomPage() {
   const supabase = createClient()
 
   useEffect(() => {
-    const fetchRoom = async () => {
+    const fetchRoom = async (retries = 5) => {
       try {
         const { data, error } = await supabase
           .from('rooms')
@@ -27,14 +27,30 @@ export default function RoomPage() {
           .single()
 
         if (error || !data) {
+          // Si hay error y aún quedan reintentos, esperar un poco y reintentar
+          // Esto es útil cuando se acaba de crear la sala y hay un delay en la propagación
+          if (retries > 0 && (error?.code === 'PGRST116' || error?.message?.includes('0 rows'))) {
+            setTimeout(() => {
+              fetchRoom(retries - 1)
+            }, 500)
+            return
+          }
+          // Si no hay más reintentos o es otro error, redirigir
           router.push('/')
           return
         }
 
         setRoomId(data.id)
+        setLoading(false)
       } catch (err) {
+        // Si hay error y aún quedan reintentos, esperar un poco y reintentar
+        if (retries > 0) {
+          setTimeout(() => {
+            fetchRoom(retries - 1)
+          }, 500)
+          return
+        }
         router.push('/')
-      } finally {
         setLoading(false)
       }
     }

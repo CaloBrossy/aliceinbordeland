@@ -3,46 +3,47 @@
 import { useEffect, useRef, useState } from 'react'
 import { Howl } from 'howler'
 
-// Sonidos disponibles - URLs de prueba de Freesound.org y Pixabay
-// En producción, reemplaza con tus propios archivos de audio
+// Sonidos disponibles - Archivos locales en public/sounds
 const soundFiles = {
   // INTRO
-  cardReveal: 'https://freesound.org/data/previews/245/245260_3889732-lq.mp3', // Metallic whoosh
-  textType: 'https://freesound.org/data/previews/316/316847_5123456-lq.mp3', // Tick suave
-  ruleReveal: 'https://freesound.org/data/previews/316/316847_5123456-lq.mp3', // Ding
-  countdown: 'https://freesound.org/data/previews/245/245847_4230557-lq.mp3', // Beep
-  gameStart: 'https://freesound.org/data/previews/316/316119_5123456-lq.mp3', // Explosión épica
-  introMusic: 'https://pixabay.com/music/beats-epic-cinematic-trailer-115089/', // Música tensa intro
+  cardReveal: '/sounds/cardReveal.mp3', // Metallic whoosh
+  textType: '/sounds/textType.mp3', // Tick suave
+  ruleReveal: '/sounds/ruleReveal.mp3', // Ding
+  countdown: '/sounds/countdown.mp3', // Beep
+  gameStart: '/sounds/gameStart.mp3', // Explosión épica
+  introMusic: '/sounds/introMusic.mp3', // Música tensa intro
 
   // JUEGO
-  ambientMusic: 'https://pixabay.com/music/beats-dark-ambient-cinematic-115085/', // Música ambiente loop
-  hover: 'https://freesound.org/data/previews/245/245847_4230557-lq.mp3', // UI hover
-  click: 'https://freesound.org/data/previews/316/316847_5123456-lq.mp3', // UI click
+  ambientMusic: '/sounds/ambientMusic.mp3', // Música ambiente loop
+  hover: '/sounds/hover.mp3', // UI hover
+  click: '/sounds/click.mp3', // UI click
+
+  // TIMER ALERT (cuando quedan pocos segundos)
+  alert: '/sounds/alert.mp3', // Alarma cuando quedan pocos segundos
 
   // MUERTE
-  alert: 'https://freesound.org/data/previews/316/316119_5123456-lq.mp3', // Alarma
-  explosion: 'https://freesound.org/data/previews/316/316119_5123456-lq.mp3', // Explosión
-  eliminated: 'https://freesound.org/data/previews/245/245847_4230557-lq.mp3', // Gong dramático
-  fadeOut: 'https://freesound.org/data/previews/245/245260_3889732-lq.mp3', // Sonido apagándose
+  explosion: '/sounds/explosion.mp3', // Explosión
+  eliminated: '/sounds/eliminated.mp3', // Gong dramático
+  fadeOut: '/sounds/fadeOut.mp3', // Sonido apagándose
 
   // OTROS
-  revive: 'https://freesound.org/data/previews/316/316847_5123456-lq.mp3', // Mágico celestial
-  reset: 'https://freesound.org/data/previews/245/245260_3889732-lq.mp3', // Whoosh reinicio
-  victory: 'https://pixabay.com/music/beats-epic-cinematic-trailer-115089/', // Música victoria
-  defeat: 'https://pixabay.com/music/beats-dark-ambient-cinematic-115085/', // Música derrota
-  heartbeat: 'https://freesound.org/data/previews/316/316847_5123456-lq.mp3', // Latidos
+  heartbeat: '/sounds/heartbeat.mp3', // Latidos
 
-  // Sonidos legacy (para compatibilidad)
-  success: 'https://freesound.org/data/previews/316/316847_5123456-lq.mp3',
-  error: 'https://freesound.org/data/previews/245/245847_4230557-lq.mp3',
-  gameClear: 'https://freesound.org/data/previews/316/316847_5123456-lq.mp3',
-  gameOver: 'https://freesound.org/data/previews/245/245847_4230557-lq.mp3',
-  death: 'https://freesound.org/data/previews/245/245847_4230557-lq.mp3',
-  elimination: 'https://freesound.org/data/previews/245/245847_4230557-lq.mp3',
-  vote: 'https://freesound.org/data/previews/316/316847_5123456-lq.mp3',
-  reveal: 'https://freesound.org/data/previews/316/316847_5123456-lq.mp3',
-  tick: 'https://freesound.org/data/previews/316/316847_5123456-lq.mp3',
-  tension: 'https://freesound.org/data/previews/245/245260_3889732-lq.mp3',
+  // Sonidos legacy (para compatibilidad - usar sonidos existentes o fallback)
+  revive: '/sounds/ruleReveal.mp3', // Mágico celestial (usar ruleReveal como fallback)
+  reset: '/sounds/cardReveal.mp3', // Whoosh reinicio (usar cardReveal como fallback)
+  victory: '/sounds/introMusic.mp3', // Música victoria (usar introMusic como fallback)
+  defeat: '/sounds/ambientMusic.mp3', // Música derrota (usar ambientMusic como fallback)
+  success: '/sounds/ruleReveal.mp3', // Sonido de éxito
+  error: '/sounds/alert.mp3', // Sonido de error (usar alert como fallback)
+  gameClear: '/sounds/ruleReveal.mp3', // Sonido de juego completado
+  gameOver: '/sounds/eliminated.mp3', // Sonido de juego terminado
+  death: '/sounds/eliminated.mp3', // Sonido de muerte
+  elimination: '/sounds/eliminated.mp3', // Sonido de eliminación
+  vote: '/sounds/click.mp3', // Sonido de voto (usar click como fallback)
+  reveal: '/sounds/cardReveal.mp3', // Sonido de revelación
+  tick: '/sounds/textType.mp3', // Sonido de tick/timer (usar textType como fallback)
+  tension: '/sounds/ambientMusic.mp3', // Sonido de tensión (usar ambientMusic como fallback)
 }
 
 type SoundKey = keyof typeof soundFiles
@@ -388,28 +389,25 @@ export function useSound() {
   }
 
   // Reproducir secuencia de muerte completa
+  // NOTA: alert NO se usa aquí, solo para timer bajo
   const playDeathSequence = (onComplete?: () => void) => {
     if (!enabled) {
       onComplete?.()
       return
     }
 
-    // Alerta
-    play('alert', { volume: volumes.dramaticEffects })
+    // Explosión
+    play('explosion', { volume: volumes.dramaticEffects })
     setTimeout(() => {
-      // Explosión
-      play('explosion', { volume: volumes.dramaticEffects })
+      // Gong dramático
+      play('eliminated', { volume: volumes.dramaticEffects })
       setTimeout(() => {
-        // Gong dramático
-        play('eliminated', { volume: volumes.dramaticEffects })
+        // Fade out
+        play('fadeOut', { volume: volumes.dramaticEffects * 0.5, fadeOut: 500 })
         setTimeout(() => {
-          // Fade out
-          play('fadeOut', { volume: volumes.dramaticEffects * 0.5, fadeOut: 500 })
-          setTimeout(() => {
-            onComplete?.()
-          }, 600)
-        }, 300)
-      }, 400)
+          onComplete?.()
+        }, 600)
+      }, 300)
     }, 200)
   }
 
