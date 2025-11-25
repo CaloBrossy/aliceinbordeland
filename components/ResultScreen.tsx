@@ -29,6 +29,7 @@ export default function ResultScreen({ roomId, roomCode }: ResultScreenProps) {
   const [playedDeaths, setPlayedDeaths] = useState<Set<string>>(new Set())
 
   const isHost = room?.host_id === user?.id
+  const game = room?.current_game as any
 
   const gameClearRef = useRef<HTMLDivElement>(null)
   const gameOverRef = useRef<HTMLDivElement>(null)
@@ -37,7 +38,7 @@ export default function ResultScreen({ roomId, roomCode }: ResultScreenProps) {
   const eliminatedItemsRef = useRef<(HTMLDivElement | null)[]>([])
   const survivorItemsRef = useRef<(HTMLDivElement | null)[]>([])
 
-  const game = room?.current_game as any
+  // Calculate results only if game and room exist
   const results = game && room
     ? calculateGameResults(game, { timer: 0, round: 1, votes: {}, answers: {}, current_turn: null, id: '', room_id: roomId, updated_at: '' }, players)
     : { gameClear: false, survivors: [], eliminated: [] }
@@ -49,6 +50,8 @@ export default function ResultScreen({ roomId, roomCode }: ResultScreenProps) {
 
   // Animate results on mount
   useEffect(() => {
+    if (!game || !room) return
+    
     if (results.gameClear && gameClearRef.current) {
       gsap.animateGameClear(gameClearRef.current)
       sound.play('gameClear', { volume: 0.9 })
@@ -56,20 +59,24 @@ export default function ResultScreen({ roomId, roomCode }: ResultScreenProps) {
       gsap.animateGameOver(gameOverRef.current)
       sound.play('gameOver', { volume: 0.9 })
     }
-  }, [results.gameClear, gsap, sound])
+  }, [game, room, results.gameClear, gsap, sound])
 
   // Animate survivors
   useEffect(() => {
+    if (!game || !room) return
+    
     if (survivorsRef.current && survivorItemsRef.current.length > 0) {
       const validItems = survivorItemsRef.current.filter((item) => item !== null)
       if (validItems.length > 0) {
         gsap.animateStaggerFadeIn(validItems)
       }
     }
-  }, [results.survivors, gsap])
+  }, [game, room, results.survivors, gsap])
 
   // Animate eliminated players with epic death animation
   useEffect(() => {
+    if (!game || !room) return
+    
     if (results.eliminated.length > 0) {
       // Play death animations sequentially for each eliminated player
       results.eliminated.forEach((player, index) => {
@@ -82,10 +89,12 @@ export default function ResultScreen({ roomId, roomCode }: ResultScreenProps) {
         }, index * 2500) // 2.5 seconds between each death animation
       })
     }
-  }, [results.eliminated, playedDeaths])
+  }, [game, room, results.eliminated, playedDeaths])
 
   // Animate eliminated cards after death animation completes
   useEffect(() => {
+    if (!game || !room) return
+    
     if (eliminatedItemsRef.current.length > 0 && !showDeathAnimation) {
       const validItems = eliminatedItemsRef.current.filter((item) => item !== null)
       if (validItems.length > 0) {
@@ -96,7 +105,7 @@ export default function ResultScreen({ roomId, roomCode }: ResultScreenProps) {
         })
       }
     }
-  }, [results.eliminated, showDeathAnimation, gsap])
+  }, [game, room, results.eliminated, showDeathAnimation, gsap])
 
   const handleDeathAnimationComplete = () => {
     setShowDeathAnimation(false)
