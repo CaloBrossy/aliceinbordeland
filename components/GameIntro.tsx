@@ -31,7 +31,7 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
   const difficultyBarsRef = useRef<HTMLDivElement[]>([])
   const situationRef = useRef<HTMLDivElement>(null)
   const rulesRef = useRef<HTMLDivElement>(null)
-  const ruleItemsRef = useRef<(HTMLLIElement | null)[]>([])
+  const ruleItemsRef = useRef<(HTMLDivElement | null)[]>([])
   const conditionsRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<HTMLDivElement>(null)
   const countdownRef = useRef<HTMLDivElement>(null)
