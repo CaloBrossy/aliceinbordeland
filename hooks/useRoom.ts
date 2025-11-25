@@ -13,6 +13,7 @@ export function useRoom(roomId: string | null) {
   const supabase = useMemo(() => createClient(), [])
   const hostCheckRef = useRef<NodeJS.Timeout | null>(null)
   const lastHostCheckRef = useRef<number>(0)
+  const playersUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     if (!roomId) {
@@ -88,7 +89,6 @@ export function useRoom(roomId: string | null) {
       .subscribe()
 
     // Subscribe to players changes
-    let playersUpdateTimeout: NodeJS.Timeout | null = null
     const playersSubscription = supabase
       .channel(`players:${roomId}`)
       .on(
@@ -101,10 +101,10 @@ export function useRoom(roomId: string | null) {
         },
         () => {
           // Debounce player updates to avoid rapid refetches
-          if (playersUpdateTimeout) {
-            clearTimeout(playersUpdateTimeout)
+          if (playersUpdateTimeoutRef.current) {
+            clearTimeout(playersUpdateTimeoutRef.current)
           }
-          playersUpdateTimeout = setTimeout(async () => {
+          playersUpdateTimeoutRef.current = setTimeout(async () => {
             // Refetch players on any change
             const { data: playersData } = await supabase
               .from('players')
@@ -115,7 +115,7 @@ export function useRoom(roomId: string | null) {
             if (playersData) {
               setPlayers(playersData as Player[])
             }
-          }, 300) // Wait 300ms before refetching
+          }, 500) // Wait 500ms before refetching
         }
       )
       .subscribe()
@@ -124,8 +124,8 @@ export function useRoom(roomId: string | null) {
       if (hostCheckRef.current) {
         clearInterval(hostCheckRef.current)
       }
-      if (playersUpdateTimeout) {
-        clearTimeout(playersUpdateTimeout)
+      if (playersUpdateTimeoutRef.current) {
+        clearTimeout(playersUpdateTimeoutRef.current)
       }
       roomSubscription.unsubscribe()
       playersSubscription.unsubscribe()
