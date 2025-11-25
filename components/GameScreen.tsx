@@ -12,6 +12,7 @@ import HeartsGame from './games/HeartsGame'
 import ClubsGame from './games/ClubsGame'
 import DiamondsGame from './games/DiamondsGame'
 import SpadesGame from './games/SpadesGame'
+import GameIntro from './GameIntro'
 import { getSuitEmoji, getSuitColor } from '@/data/gamesLibrary'
 import type { Game } from '@/types/game'
 import { Clock, Users, LogOut, Skull } from 'lucide-react'
@@ -23,6 +24,7 @@ interface GameScreenProps {
 
 export default function GameScreen({ roomId, roomCode }: GameScreenProps) {
   const [timer, setTimer] = useState(0)
+  const [showIntro, setShowIntro] = useState(true)
   const router = useRouter()
   const { user } = useAuth()
   const { room, players } = useRoom(roomId)
@@ -147,6 +149,17 @@ export default function GameScreen({ roomId, roomCode }: GameScreenProps) {
           <p className="text-gray-400">Cargando juego...</p>
         </div>
       </div>
+    )
+  }
+
+  // Show intro first
+  if (showIntro) {
+    return (
+      <GameIntro
+        game={game}
+        onStart={() => setShowIntro(false)}
+        onSkip={() => setShowIntro(false)}
+      />
     )
   }
 
