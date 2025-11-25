@@ -583,6 +583,16 @@ body::after {
   animation: pulse-glow 2s ease-in-out infinite;
 }
 
+/* Scanning border animation */
+@keyframes scanning {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   body::after {

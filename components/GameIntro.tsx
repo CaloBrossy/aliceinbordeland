@@ -18,30 +18,116 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
   const [currentStep, setCurrentStep] = useState(0)
   const [countdown, setCountdown] = useState<number | null>(null)
   const [skippable, setSkippable] = useState(false)
+  const [typedText, setTypedText] = useState('')
+  const [glitchActive, setGlitchActive] = useState(false)
   const sound = useSoundContext()
   
   const containerRef = useRef<HTMLDivElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
+  const cardParticlesRef = useRef<HTMLDivElement>(null)
   const titleRef = useRef<HTMLDivElement>(null)
+  const titleTextRef = useRef<HTMLDivElement>(null)
   const difficultyRef = useRef<HTMLDivElement>(null)
+  const difficultyBarsRef = useRef<HTMLDivElement[]>([])
   const situationRef = useRef<HTMLDivElement>(null)
   const rulesRef = useRef<HTMLDivElement>(null)
   const ruleItemsRef = useRef<(HTMLLIElement | null)[]>([])
   const conditionsRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<HTMLDivElement>(null)
   const countdownRef = useRef<HTMLDivElement>(null)
+  const countdownCircleRef = useRef<SVGCircleElement>(null)
   const startButtonRef = useRef<HTMLButtonElement>(null)
+  const underlineRef = useRef<HTMLDivElement>(null)
 
   const suitEmoji = getSuitEmoji(game.suit)
   const suitName = getSuitName(game.suit)
+  const fullTitle = `${game.card.split(' ')[0]} DE ${suitName.toUpperCase()}`
 
   // Play intro music
   useEffect(() => {
-    sound.playBgMusic('bgmIntro')
+    sound.playBgMusic('introMusic', 2000)
     return () => {
-      sound.stopBgMusic()
+      sound.stopBgMusic(1000)
     }
   }, [sound])
+
+  // Typing animation
+  useEffect(() => {
+    if (currentStep >= 1 && titleTextRef.current) {
+      let currentIndex = 0
+      const text = fullTitle
+      setTypedText('')
+
+      const typingInterval = setInterval(() => {
+        if (currentIndex < text.length) {
+          setTypedText(text.slice(0, currentIndex + 1))
+          sound.play('textType', { volume: 0.2 })
+          currentIndex++
+        } else {
+          clearInterval(typingInterval)
+          // Start underline animation
+          if (underlineRef.current) {
+            gsap.fromTo(
+              underlineRef.current,
+              { scaleX: 0 },
+              { scaleX: 1, duration: 0.8, ease: 'power2.out' }
+            )
+          }
+        }
+      }, 50)
+
+      return () => clearInterval(typingInterval)
+    }
+  }, [currentStep, fullTitle, sound])
+
+  // Glitch effect (random)
+  useEffect(() => {
+    if (currentStep >= 1) {
+      const glitchInterval = setInterval(() => {
+        setGlitchActive(true)
+        setTimeout(() => setGlitchActive(false), 100)
+      }, 5000 + Math.random() * 5000)
+
+      return () => clearInterval(glitchInterval)
+    }
+  }, [currentStep])
+
+  // Create orbiting particles around card
+  useEffect(() => {
+    if (!cardParticlesRef.current || !cardRef.current) return
+
+    const particleCount = 12
+    const particles: HTMLDivElement[] = []
+
+    for (let i = 0; i < particleCount; i++) {
+      const particle = document.createElement('div')
+      particle.className = 'absolute w-1 h-1 bg-red-500 rounded-full'
+      particle.style.boxShadow = '0 0 10px rgba(233, 69, 96, 0.8)'
+      particle.style.willChange = 'transform'
+      cardParticlesRef.current.appendChild(particle)
+      particles.push(particle)
+
+      const angle = (360 / particleCount) * i
+      const radius = 120
+      const duration = 3 + Math.random() * 2
+
+      gsap.to(particle, {
+        rotation: 360,
+        duration,
+        repeat: -1,
+        ease: 'none',
+        transformOrigin: '50% 50%',
+        motionPath: {
+          path: `M ${Math.cos((angle * Math.PI) / 180) * radius} ${Math.sin((angle * Math.PI) / 180) * radius} A ${radius} ${radius} 0 1 1 ${Math.cos((angle * Math.PI) / 180) * radius} ${Math.sin((angle * Math.PI) / 180) * radius}`,
+          autoRotate: true,
+        },
+      })
+    }
+
+    return () => {
+      particles.forEach((p) => p.remove())
+    }
+  }, [])
 
   // Animation sequence
   useEffect(() => {
@@ -53,51 +139,63 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
       },
     })
 
-    // Initial black screen
-    tl.set(containerRef.current, { opacity: 1 })
-      // Card appears with glow
+    // Initial fade from black (2 seconds)
+    tl.fromTo(
+      containerRef.current,
+      { opacity: 0 },
+      { opacity: 1, duration: 2, ease: 'power2.inOut' }
+    )
+      // Card appears ENORME with 3D rotation
       .fromTo(
         cardRef.current,
         {
           scale: 0,
           opacity: 0,
-          rotation: -180,
+          rotationX: -180,
+          rotationY: -180,
+          z: -500,
         },
         {
           scale: 1,
           opacity: 1,
-          rotation: 0,
-          duration: 1.2,
+          rotationX: 0,
+          rotationY: 0,
+          z: 0,
+          duration: 1.5,
           ease: 'back.out(1.7)',
+          transformStyle: 'preserve-3d',
           onStart: () => {
-            sound.play('gameStart')
+            sound.play('cardReveal', { volume: 0.8 })
           },
         }
       )
-      // Add glow effect to card
-      .to(cardRef.current, {
-        boxShadow: '0 0 40px rgba(220, 38, 38, 0.8), 0 0 80px rgba(220, 38, 38, 0.4)',
-        duration: 0.5,
-        repeat: 3,
-        yoyo: true,
-        ease: 'power2.inOut',
-      })
-      // Title appears
+      // Pulsing neon glow on card
+      .to(
+        cardRef.current,
+        {
+          boxShadow: '0 0 60px rgba(233, 69, 96, 1), 0 0 120px rgba(233, 69, 96, 0.6), 0 0 180px rgba(233, 69, 96, 0.4)',
+          duration: 0.8,
+          repeat: -1,
+          yoyo: true,
+          ease: 'power2.inOut',
+        },
+        '-=0.5'
+      )
+      // Title appears with typing animation
+      .call(() => setCurrentStep(1))
       .fromTo(
         titleRef.current,
-        { opacity: 0, y: 30 },
+        { opacity: 0, y: 50 },
         {
           opacity: 1,
           y: 0,
-          duration: 0.8,
+          duration: 0.6,
           ease: 'power3.out',
-          onStart: () => {
-            sound.play('reveal')
-          },
         },
         '-=0.3'
       )
-      // Difficulty appears
+      // Difficulty section appears
+      .call(() => setCurrentStep(2))
       .fromTo(
         difficultyRef.current,
         { opacity: 0, scale: 0.8 },
@@ -105,24 +203,34 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
           opacity: 1,
           scale: 1,
           duration: 0.6,
-          ease: 'power2.out',
+          ease: 'back.out(1.5)',
         },
         '-=0.2'
       )
+      // Fill difficulty bars
+      .to(difficultyBarsRef.current, {
+        scaleX: 1,
+        duration: 1,
+        stagger: 0.05,
+        ease: 'power2.out',
+        onStart: () => {
+          sound.play('ruleReveal', { volume: 0.3 })
+        },
+      })
       // Situation appears line by line
-      .call(() => setCurrentStep(1))
+      .call(() => setCurrentStep(3))
       .fromTo(
         situationRef.current,
-        { opacity: 0, x: -50 },
+        { opacity: 0, y: 30 },
         {
           opacity: 1,
-          x: 0,
+          y: 0,
           duration: 0.8,
           ease: 'power2.out',
         }
       )
       // Rules appear one by one
-      .call(() => setCurrentStep(2))
+      .call(() => setCurrentStep(4))
       .fromTo(
         rulesRef.current,
         { opacity: 0 },
@@ -132,49 +240,41 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
           ease: 'power2.out',
         }
       )
-      // Animate each rule item
       .to(ruleItemsRef.current, {
         opacity: 1,
         x: 0,
+        scale: 1,
         duration: 0.5,
-        stagger: 0.15,
-        ease: 'power2.out',
+        stagger: 0.3,
+        ease: 'back.out(1.5)',
         onStart: () => {
-          ruleItemsRef.current.forEach((el) => {
+          ruleItemsRef.current.forEach((el, i) => {
             if (el) {
-              gsap.set(el, { opacity: 0, x: -30 })
+              gsap.set(el, { opacity: 0, x: -50, scale: 0.8 })
+              setTimeout(() => {
+                sound.play('ruleReveal', { volume: 0.3 })
+              }, i * 300)
             }
           })
         },
       })
       // Victory/Defeat conditions
-      .call(() => setCurrentStep(3))
+      .call(() => setCurrentStep(5))
       .fromTo(
         conditionsRef.current,
-        { opacity: 0, y: 20 },
+        { opacity: 0, y: 30, scale: 0.9 },
         {
           opacity: 1,
           y: 0,
-          duration: 0.8,
-          ease: 'power2.out',
-        }
-      )
-      // Time limit
-      .call(() => setCurrentStep(4))
-      .fromTo(
-        timerRef.current,
-        { opacity: 0, scale: 0.9 },
-        {
-          opacity: 1,
           scale: 1,
-          duration: 0.6,
+          duration: 0.8,
           ease: 'back.out(1.5)',
         }
       )
-      // Start button pulse
-      .call(() => setCurrentStep(5))
+      // Time limit
+      .call(() => setCurrentStep(6))
       .fromTo(
-        startButtonRef.current,
+        timerRef.current,
         { opacity: 0, scale: 0.8 },
         {
           opacity: 1,
@@ -183,9 +283,23 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
           ease: 'back.out(1.5)',
         }
       )
+      // Start button appears
+      .call(() => setCurrentStep(7))
+      .fromTo(
+        startButtonRef.current,
+        { opacity: 0, scale: 0.8, y: 20 },
+        {
+          opacity: 1,
+          scale: 1,
+          y: 0,
+          duration: 0.6,
+          ease: 'back.out(1.5)',
+        }
+      )
+      // Button pulse effect
       .to(startButtonRef.current, {
-        boxShadow: '0 0 20px rgba(220, 38, 38, 0.6)',
-        duration: 0.5,
+        boxShadow: '0 0 30px rgba(233, 69, 96, 0.8), 0 0 60px rgba(233, 69, 96, 0.4)',
+        duration: 1,
         repeat: -1,
         yoyo: true,
         ease: 'power2.inOut',
@@ -201,21 +315,19 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
     if (countdown === null) return
 
     if (countdown > 0) {
-      // Play countdown sound
-      sound.play('countdown', { volume: 0.8 })
-      
       const timer = setTimeout(() => {
         setCountdown(countdown - 1)
-        // Play countdown sound
-        playSound('countdown')
+        sound.play('countdown', { volume: 0.6 })
+        
         // Animate countdown number
         if (countdownRef.current) {
           gsap.fromTo(
             countdownRef.current,
-            { scale: 0, opacity: 0 },
+            { scale: 0, opacity: 0, rotation: -180 },
             {
               scale: 1.5,
               opacity: 1,
+              rotation: 0,
               duration: 0.3,
               ease: 'back.out(2)',
             }
@@ -226,20 +338,65 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
             ease: 'power2.out',
           })
         }
+
+        // Animate circle
+        if (countdownCircleRef.current) {
+          const progress = (3 - countdown) / 3
+          const circumference = 2 * Math.PI * 90
+          const offset = circumference * (1 - progress)
+          gsap.to(countdownCircleRef.current, {
+            strokeDashoffset: offset,
+            duration: 1,
+            ease: 'power2.out',
+          })
+        }
+
+        // Particle explosion
+        createCountdownParticles()
       }, 1000)
       return () => clearTimeout(timer)
     } else {
-      // Countdown finished, start game
-      sound.play('gameStart', { volume: 0.9 })
       setTimeout(() => {
         handleFadeOutAndStart()
       }, 500)
     }
-  }, [countdown, sound])
+  }, [countdown])
+
+  const createCountdownParticles = () => {
+    if (!countdownRef.current) return
+
+    const rect = countdownRef.current.getBoundingClientRect()
+    const centerX = rect.left + rect.width / 2
+    const centerY = rect.top + rect.height / 2
+
+    for (let i = 0; i < 20; i++) {
+      const particle = document.createElement('div')
+      particle.className = 'absolute w-2 h-2 bg-red-500 rounded-full'
+      particle.style.left = `${centerX}px`
+      particle.style.top = `${centerY}px`
+      particle.style.boxShadow = '0 0 10px rgba(233, 69, 96, 0.8)'
+      particle.style.willChange = 'transform'
+      document.body.appendChild(particle)
+
+      const angle = (360 / 20) * i
+      const distance = 100 + Math.random() * 50
+      const duration = 0.8 + Math.random() * 0.4
+
+      gsap.to(particle, {
+        x: Math.cos((angle * Math.PI) / 180) * distance,
+        y: Math.sin((angle * Math.PI) / 180) * distance,
+        opacity: 0,
+        scale: 0,
+        duration,
+        ease: 'power2.out',
+        onComplete: () => particle.remove(),
+      })
+    }
+  }
 
   const handleStart = () => {
     sound.play('click')
-    sound.stopBgMusic()
+    sound.stopBgMusic(500)
     setCountdown(3)
   }
 
@@ -247,95 +404,39 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
     if (!containerRef.current) return
 
     const tl = gsap.timeline({
-      onComplete: () => {
-        sound.playBgMusic('bgmGame')
-        onStart()
-      },
+      onComplete: onStart,
     })
 
     tl.to(containerRef.current, {
       opacity: 0,
-      duration: 0.8,
+      scale: 0.95,
+      duration: 1,
       ease: 'power2.in',
     })
   }
 
   const handleSkip = () => {
     sound.play('click')
-    sound.stopBgMusic()
+    sound.stopBgMusic(500)
     handleFadeOutAndStart()
   }
 
   // Get game-specific content
   const getGameContent = () => {
-    // Hearts games
     if (game.suit === 'hearts') {
-      if (game.mechanic === 'vote_elimination') {
-        return {
-          situation: 'Uno de ustedes es un impostor. Deben identificar y eliminar a la amenaza antes de que sea demasiado tarde.',
-          rules: [
-            'Cada jugador tiene un voto secreto',
-            'Deben elegir quién es el impostor',
-            'Los votos se revelan cuando todos hayan votado',
-            'El más votado es eliminado inmediatamente',
-          ],
-          victory: 'Eliminar al impostor correcto',
-          defeat: 'Ser eliminado por votos erróneos',
-        }
-      }
-      if (game.mechanic === 'prisoners_dilemma') {
-        return {
-          situation: 'Enfrentan un dilema. Colaborar puede salvarlos a todos... o pueden traicionarse mutuamente.',
-          rules: [
-            'Cada jugador decide: colaborar o traicionar',
-            'La decisión es secreta hasta el reveal',
-            'Las consecuencias dependen de las decisiones del grupo',
-            'La traición puede ser letal',
-          ],
-          victory: 'Sobrevivir a través de la cooperación',
-          defeat: 'Ser eliminado por traición o desconfianza',
-        }
-      }
       return {
-        situation: 'Tendrán que decidir quién vive y quién muere. La mayoría manda, pero ¿serán justos?',
+        situation: 'Tendrán que decidir quién vive y quién muere. La traición puede ser su mejor arma... o su perdición.',
         rules: [
-          'Cada jugador tiene un voto público',
+          'Cada jugador tiene un voto secreto',
           'Deben elegir a quién eliminar',
-          'La mayoría decide el destino',
+          'Los votos se revelan cuando todos hayan votado',
           'El más votado es eliminado',
         ],
         victory: 'Sobrevivir hasta el final',
-        defeat: 'Ser eliminado por la mayoría',
+        defeat: 'Ser eliminado por los votos',
       }
     }
-    // Clubs games
     if (game.suit === 'clubs') {
-      if (game.mechanic === 'collaborative_riddles') {
-        return {
-          situation: 'Atrapados en una habitación con acertijos mortales. Solo trabajando juntos podrán resolverlos todos.',
-          rules: [
-            'Deben resolver acertijos en equipo',
-            'Cualquiera puede contribuir con respuestas',
-            'La comunicación es esencial',
-            'Todos deben participar activamente',
-          ],
-          victory: 'Resolver todos los acertijos correctamente',
-          defeat: 'Fallar en los acertijos o no colaborar',
-        }
-      }
-      if (game.mechanic === 'sequential_collaboration') {
-        return {
-          situation: 'Deben construir algo juntos. Cada uno aporta una pieza del rompecabezas.',
-          rules: [
-            'Cada jugador contribuye en secuencia',
-            'Deben construir sobre las contribuciones anteriores',
-            'La coordinación es crucial',
-            'Todos deben participar en orden',
-          ],
-          victory: 'Completar la construcción exitosamente',
-          defeat: 'Fallar en la colaboración o romper la cadena',
-        }
-      }
       return {
         situation: 'Solo trabajando juntos podrán sobrevivir. La confianza es su única arma.',
         rules: [
@@ -348,34 +449,7 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
         defeat: 'Fallar en los desafíos o no colaborar',
       }
     }
-    // Diamonds games
     if (game.suit === 'diamonds') {
-      if (game.mechanic === 'speed_math') {
-        return {
-          situation: 'Su inteligencia será puesta a prueba con problemas matemáticos. La velocidad y precisión son esenciales.',
-          rules: [
-            'Cada jugador tiene turnos individuales',
-            'Deben resolver ecuaciones rápidamente',
-            'La velocidad importa más que la perfección',
-            'Cada respuesta correcta cuenta',
-          ],
-          victory: 'Resolver todos los problemas correctamente',
-          defeat: 'Fallar en los problemas o quedarse sin tiempo',
-        }
-      }
-      if (game.mechanic === 'pattern_recognition') {
-        return {
-          situation: 'Encuentren el patrón oculto. Su capacidad de observación y lógica serán probadas.',
-          rules: [
-            'Identifiquen el patrón en la secuencia',
-            'Tienen intentos limitados',
-            'La lógica es más importante que la velocidad',
-            'Cada intento cuenta',
-          ],
-          victory: 'Identificar el patrón correctamente',
-          defeat: 'Agotar todos los intentos o no encontrar el patrón',
-        }
-      }
       return {
         situation: 'Su inteligencia será puesta a prueba. La lógica y el razonamiento rápido son esenciales.',
         rules: [
@@ -388,44 +462,17 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
         defeat: 'Fallar en los problemas o quedarse sin tiempo',
       }
     }
-    // Spades games
     if (game.suit === 'spades') {
-      if (game.mechanic === 'timed_questions') {
-        return {
-          situation: 'Responderán preguntas bajo presión extrema. La honestidad y rapidez pueden salvarlos.',
-          rules: [
-            'Deben responder preguntas personales',
-            'Tienen tiempo limitado por pregunta',
-            'La honestidad puede ser cuestionada',
-            'Cada respuesta debe ser válida',
-          ],
-          victory: 'Completar todas las preguntas a tiempo',
-          defeat: 'Fallar en responder o quedarse sin tiempo',
-        }
-      }
-      if (game.mechanic === 'physical_challenges') {
-        return {
-          situation: 'Su resistencia física será probada. Solo los más fuertes y determinados sobrevivirán.',
-          rules: [
-            'Deben completar desafíos físicos',
-            'Cada jugador debe confirmar su completación',
-            'La resistencia es crucial',
-            'No hay atajos, solo esfuerzo',
-          ],
-          victory: 'Todos completan los desafíos',
-          defeat: 'No poder completar los desafíos a tiempo',
-        }
-      }
       return {
         situation: 'Su resistencia física y mental será probada. Solo los más fuertes sobrevivirán.',
         rules: [
-          'Deben completar desafíos de resistencia',
-          'Cada jugador debe mantenerse hasta el final',
-          'La determinación es clave',
-          'El último en rendirse gana',
+          'Deben completar desafíos físicos',
+          'Cada jugador debe confirmar su completación',
+          'La resistencia es crucial',
+          'No hay atajos, solo esfuerzo',
         ],
-        victory: 'Sobrevivir hasta el final',
-        defeat: 'Rendirse antes que los demás',
+        victory: 'Todos completan los desafíos',
+        defeat: 'No poder completar los desafíos a tiempo',
       }
     }
     return {
@@ -437,199 +484,207 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
   }
 
   const content = getGameContent()
+  const difficultyBars = Array.from({ length: 10 }, (_, i) => i < game.difficulty)
 
   return (
     <div
       ref={containerRef}
-      className="fixed inset-0 z-50 bg-black flex items-center justify-center overflow-hidden"
+      className="fixed inset-0 z-50 bg-black flex items-center justify-center overflow-hidden perspective-3d"
       style={{ opacity: 0 }}
     >
-      {/* Glitch effect overlay */}
-      <div className="absolute inset-0 opacity-5 pointer-events-none">
-        <div className="absolute inset-0 bg-gradient-to-b from-red-900/20 via-transparent to-transparent" />
-      </div>
-
       {/* Skip button */}
       {skippable && (
         <button
           onClick={handleSkip}
-          className="absolute top-4 right-4 z-10 px-4 py-2 border border-red-600/50 text-red-400 hover:bg-red-600/10 rounded-lg transition-colors flex items-center gap-2"
+          className="absolute top-4 right-4 z-10 px-4 py-2 glass rounded-lg text-red-400 hover:text-red-300 hover:neon-shadow-red transition-all flex items-center gap-2"
         >
           <X className="w-4 h-4" />
           SALTAR INTRO
         </button>
       )}
 
-      <div className="max-w-4xl mx-auto px-4 space-y-8 text-center">
-        {/* Card Symbol */}
-        <div
-          ref={cardRef}
-          className="text-9xl mb-4 relative"
-          style={{
-            textShadow: '0 0 40px rgba(220, 38, 38, 0.8), 0 0 80px rgba(220, 38, 38, 0.4)',
-            filter: 'drop-shadow(0 0 30px rgba(220,38,38,0.8))',
-          }}
-        >
-          <span className="relative z-10">{suitEmoji}</span>
-          {/* Glow effect */}
+      <div className="max-w-5xl mx-auto px-4 space-y-8 text-center relative z-10">
+        {/* Card Symbol - ENORME */}
+        <div className="relative mb-8">
           <div
-            className="absolute inset-0 -z-10 blur-3xl"
+            ref={cardRef}
+            className="text-[15rem] relative mx-auto"
             style={{
-              background: `radial-gradient(circle, rgba(220,38,38,0.6) 0%, transparent 70%)`,
-              transform: 'scale(1.5)',
-            }}
-          />
-        </div>
-
-        {/* Title */}
-        <div ref={titleRef} style={{ opacity: 0 }}>
-          <h1
-            className="text-6xl font-bold text-white mb-2 tracking-wider"
-            style={{
-              textShadow: '2px 2px 0px rgba(220,38,38,0.5), 4px 4px 0px rgba(220,38,38,0.3)',
+              textShadow: '0 0 60px rgba(233, 69, 96, 1), 0 0 120px rgba(233, 69, 96, 0.6), 0 0 180px rgba(233, 69, 96, 0.4)',
+              filter: 'drop-shadow(0 0 40px rgba(233, 69, 96, 0.8))',
+              transformStyle: 'preserve-3d',
             }}
           >
-            {game.card.split(' ')[0]} DE {suitName.toUpperCase()}
-          </h1>
-          <h2
-            className="text-3xl font-bold text-red-500 mb-6"
+            {suitEmoji}
+          </div>
+          {/* Orbiting particles */}
+          <div ref={cardParticlesRef} className="absolute inset-0 pointer-events-none" />
+        </div>
+
+        {/* Title with typing animation */}
+        <div ref={titleRef} style={{ opacity: 0 }} className="mb-6">
+          <h1
+            ref={titleTextRef}
+            className={`text-6xl font-bold text-white mb-2 tracking-wider ${
+              glitchActive ? 'glitch' : ''
+            }`}
+            data-text={fullTitle}
             style={{
-              textShadow: '0 0 20px rgba(220,38,38,0.8)',
+              textShadow: '2px 2px 0px rgba(233, 69, 96, 0.5), 4px 4px 0px rgba(233, 69, 96, 0.3)',
+            }}
+          >
+            {typedText}
+            <span className="opacity-0">{fullTitle}</span>
+          </h1>
+          {/* Animated underline */}
+          <div
+            ref={underlineRef}
+            className="h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent mx-auto"
+            style={{
+              maxWidth: '600px',
+              transformOrigin: 'left',
+              boxShadow: '0 0 20px rgba(233, 69, 96, 0.8)',
+            }}
+          />
+          <h2
+            className="text-3xl font-bold text-red-500 mt-4 neon-red"
+            style={{
+              textShadow: '0 0 20px rgba(233, 69, 96, 0.8)',
             }}
           >
             {game.name.toUpperCase()}
           </h2>
         </div>
 
-        {/* Difficulty */}
-        <div ref={difficultyRef} style={{ opacity: 0 }}>
-          <p
-            className="text-2xl font-bold text-gray-300 mb-8 border-t border-b border-red-600/30 py-4 px-8"
-            style={{
-              textShadow: '0 0 10px rgba(220,38,38,0.5)',
-            }}
-          >
-            JUEGO DE {suitName.toUpperCase()} - DIFICULTAD {game.difficulty}
-          </p>
-        </div>
+        {/* Difficulty with visual bars */}
+        {currentStep >= 2 && (
+          <div ref={difficultyRef} style={{ opacity: 0 }} className="mb-8">
+            <p className="text-2xl font-bold text-gray-300 mb-4">JUEGO DE {suitName.toUpperCase()} - DIFICULTAD</p>
+            <div className="flex items-center justify-center gap-2 mb-4">
+              {difficultyBars.map((filled, index) => (
+                <div
+                  key={index}
+                  ref={(el) => {
+                    if (el) difficultyBarsRef.current[index] = el
+                  }}
+                  className="h-8 flex-1 max-w-[40px] origin-left"
+                  style={{
+                    transform: 'scaleX(0)',
+                    background: filled
+                      ? `linear-gradient(90deg, ${index < game.difficulty ? '#e94560' : '#4a4a4a'}, ${index < game.difficulty ? '#ff0033' : '#4a4a4a'})`
+                      : '#2a2a2a',
+                    boxShadow: filled
+                      ? '0 0 10px rgba(233, 69, 96, 0.6), inset 0 0 10px rgba(255, 0, 51, 0.3)'
+                      : 'none',
+                    borderRadius: '4px',
+                  }}
+                />
+              ))}
+            </div>
+            <p className="text-5xl font-bold neon-red">{game.difficulty}/10</p>
+          </div>
+        )}
 
         {/* Situation */}
-        {currentStep >= 1 && (
+        {currentStep >= 3 && (
           <div
             ref={situationRef}
-            className="glass rounded-lg p-6 max-w-2xl mx-auto border border-red-600/30"
+            className="glass-strong rounded-lg p-8 max-w-3xl mx-auto border border-red-600/30"
             style={{ opacity: 0 }}
           >
-            <h3
-              className="text-xl font-bold text-red-500 mb-4"
-              style={{
-                textShadow: '0 0 10px rgba(220,38,38,0.6)',
-              }}
-            >
-              SITUACIÓN:
-            </h3>
-            <p className="text-lg text-gray-300 leading-relaxed">{content.situation}</p>
+            <h3 className="text-2xl font-bold text-red-500 mb-6 neon-red">SITUACIÓN:</h3>
+            <p className="text-xl text-gray-200 leading-relaxed">{content.situation}</p>
+            <span className="inline-block w-2 h-6 bg-red-500 ml-2 animate-pulse" />
           </div>
         )}
 
         {/* Rules */}
-        {currentStep >= 2 && (
+        {currentStep >= 4 && (
           <div
             ref={rulesRef}
-            className="glass rounded-lg p-6 max-w-2xl mx-auto text-left border border-red-600/30"
+            className="max-w-3xl mx-auto space-y-4"
             style={{ opacity: 0 }}
           >
-            <h3
-              className="text-xl font-bold text-red-500 mb-4 text-center"
-              style={{
-                textShadow: '0 0 10px rgba(220,38,38,0.6)',
-              }}
-            >
-              REGLAS:
-            </h3>
-            <ul className="space-y-3">
+            <h3 className="text-2xl font-bold text-red-500 mb-6 neon-red">REGLAS:</h3>
+            <div className="space-y-3">
               {content.rules.map((rule, index) => (
-                <li
+                <div
                   key={index}
                   ref={(el) => {
                     if (el) ruleItemsRef.current[index] = el
                   }}
-                  className="text-gray-300 flex items-start gap-3"
+                  className="glass rounded-lg p-4 flex items-start gap-4 hover:neon-shadow-red transition-all"
                   style={{ opacity: 0 }}
                 >
-                  <span
-                    className="text-red-500 font-bold text-xl min-w-[30px]"
+                  <div
+                    className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center flex-shrink-0 neon-shadow-red"
                     style={{
-                      textShadow: '0 0 10px rgba(220,38,38,0.8)',
+                      boxShadow: '0 0 20px rgba(233, 69, 96, 0.8)',
                     }}
                   >
-                    {index + 1}.
-                  </span>
-                  <span className="text-lg">{rule}</span>
-                </li>
+                    <span className="text-white font-bold text-lg">{index + 1}</span>
+                  </div>
+                  <p className="text-lg text-gray-200 flex-1 text-left">{rule}</p>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
         )}
 
         {/* Victory/Defeat */}
-        {currentStep >= 3 && (
+        {currentStep >= 5 && (
           <div
             ref={conditionsRef}
-            className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto"
+            className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto"
             style={{ opacity: 0 }}
           >
             <div
-              className="glass rounded-lg p-4 border border-green-600/50"
+              className="glass-strong rounded-lg p-6 border-2 relative overflow-hidden"
               style={{
-                boxShadow: '0 0 20px rgba(16, 185, 129, 0.3)',
+                borderColor: 'rgba(78, 204, 163, 0.5)',
+                boxShadow: '0 0 30px rgba(78, 204, 163, 0.3), inset 0 0 30px rgba(78, 204, 163, 0.1)',
               }}
             >
-              <h4
-                className="text-green-500 font-bold mb-2"
+              <div
+                className="absolute inset-0 opacity-20"
                 style={{
-                  textShadow: '0 0 10px rgba(16, 185, 129, 0.8)',
+                  background: 'linear-gradient(45deg, rgba(78, 204, 163, 0.3), transparent)',
                 }}
-              >
-                ✓ VICTORIA:
-              </h4>
-              <p className="text-gray-300">{content.victory}</p>
+              />
+              <h4 className="text-green-400 font-bold mb-3 text-xl neon-green relative z-10">✓ VICTORIA:</h4>
+              <p className="text-gray-200 relative z-10">{content.victory}</p>
             </div>
             <div
-              className="glass rounded-lg p-4 border border-red-600/50"
+              className="glass-strong rounded-lg p-6 border-2 relative overflow-hidden"
               style={{
-                boxShadow: '0 0 20px rgba(220, 38, 38, 0.3)',
+                borderColor: 'rgba(233, 69, 96, 0.5)',
+                boxShadow: '0 0 30px rgba(233, 69, 96, 0.3), inset 0 0 30px rgba(233, 69, 96, 0.1)',
               }}
             >
-              <h4
-                className="text-red-500 font-bold mb-2"
+              <div
+                className="absolute inset-0 opacity-20"
                 style={{
-                  textShadow: '0 0 10px rgba(220, 38, 38, 0.8)',
+                  background: 'linear-gradient(45deg, rgba(233, 69, 96, 0.3), transparent)',
                 }}
-              >
-                ✗ DERROTA:
-              </h4>
-              <p className="text-gray-300">{content.defeat}</p>
+              />
+              <h4 className="text-red-400 font-bold mb-3 text-xl neon-red relative z-10">✗ DERROTA:</h4>
+              <p className="text-gray-200 relative z-10">{content.defeat}</p>
             </div>
           </div>
         )}
 
         {/* Time Limit */}
-        {currentStep >= 4 && (
+        {currentStep >= 6 && (
           <div
             ref={timerRef}
-            className="glass rounded-lg p-4 max-w-md mx-auto border border-red-600"
+            className="glass-strong rounded-lg p-6 max-w-md mx-auto border-2"
             style={{
               opacity: 0,
-              boxShadow: '0 0 20px rgba(220, 38, 38, 0.4)',
+              borderColor: 'rgba(233, 69, 96, 0.5)',
+              boxShadow: '0 0 30px rgba(233, 69, 96, 0.4)',
             }}
           >
-            <p
-              className="text-xl font-bold text-red-400"
-              style={{
-                textShadow: '0 0 10px rgba(220, 38, 38, 0.8)',
-              }}
-            >
+            <p className="text-2xl font-bold text-red-400 neon-red">
               TIEMPO LÍMITE: {Math.floor(game.timeLimit / 60)} minutos
             </p>
           </div>
@@ -638,72 +693,79 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
         {/* Countdown */}
         {countdown !== null && countdown > 0 && (
           <div className="fixed inset-0 flex items-center justify-center bg-black/95 z-50">
-            <div
-              ref={countdownRef}
-              className="text-9xl font-bold text-red-500 relative"
-              style={{
-                textShadow: '0 0 60px rgba(220, 38, 38, 1), 0 0 120px rgba(220, 38, 38, 0.6)',
-                filter: 'drop-shadow(0 0 40px rgba(220,38,38,1))',
-              }}
-            >
-              {countdown}
-              {/* Glow effect */}
+            <div className="relative">
+              {/* SVG Circle */}
+              <svg className="w-64 h-64 transform -rotate-90" viewBox="0 0 200 200">
+                <circle
+                  cx="100"
+                  cy="100"
+                  r="90"
+                  fill="none"
+                  stroke="rgba(255, 255, 255, 0.1)"
+                  strokeWidth="8"
+                />
+                <circle
+                  ref={countdownCircleRef}
+                  cx="100"
+                  cy="100"
+                  r="90"
+                  fill="none"
+                  stroke="#e94560"
+                  strokeWidth="8"
+                  strokeLinecap="round"
+                  strokeDasharray={`${2 * Math.PI * 90}`}
+                  strokeDashoffset={2 * Math.PI * 90}
+                  style={{
+                    filter: 'drop-shadow(0 0 10px rgba(233, 69, 96, 0.8))',
+                  }}
+                />
+              </svg>
+              {/* Countdown number */}
               <div
-                className="absolute inset-0 -z-10 blur-3xl"
+                ref={countdownRef}
+                className="absolute inset-0 flex items-center justify-center text-9xl font-bold text-red-500"
                 style={{
-                  background: `radial-gradient(circle, rgba(220,38,38,0.8) 0%, transparent 70%)`,
-                  transform: 'scale(2)',
+                  textShadow: '0 0 60px rgba(233, 69, 96, 1), 0 0 120px rgba(233, 69, 96, 0.6)',
+                  filter: 'drop-shadow(0 0 40px rgba(233, 69, 96, 1))',
                 }}
-              />
+              >
+                {countdown}
+              </div>
             </div>
           </div>
         )}
 
         {/* Start Button */}
-        {currentStep >= 5 && countdown === null && (
+        {currentStep >= 7 && countdown === null && (
           <div className="mt-8">
             <button
               ref={startButtonRef}
               onClick={handleStart}
-              className="px-12 py-4 bg-red-600 hover:bg-red-700 text-white text-2xl font-bold rounded-lg transition-colors flex items-center gap-3 mx-auto shadow-[0_0_30px_rgba(220,38,38,0.6)]"
+              className="px-16 py-5 text-2xl font-bold rounded-lg transition-all btn-base relative overflow-hidden group"
+              style={{
+                background: 'linear-gradient(135deg, #e94560, #ff0033)',
+                color: 'white',
+                boxShadow: '0 0 30px rgba(233, 69, 96, 0.6)',
+                border: '2px solid rgba(233, 69, 96, 0.5)',
+              }}
             >
-              <Play className="w-6 h-6" />
-              COMENZAR JUEGO
+              <span className="relative z-10 flex items-center gap-3">
+                <Play className="w-6 h-6" />
+                INICIAR JUEGO
+              </span>
+              {/* Scanning border effect */}
+              <div
+                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                style={{
+                  background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent)',
+                  backgroundSize: '200% 100%',
+                  animation: 'scanning 2s linear infinite',
+                }}
+              />
             </button>
           </div>
         )}
       </div>
-
-      {/* Subtle particles effect */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {[...Array(20)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute w-1 h-1 bg-red-500/30 rounded-full"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 3}s`,
-              animation: 'float 10s infinite ease-in-out',
-            }}
-          />
-        ))}
-      </div>
-
-      <style jsx>{`
-        @keyframes float {
-          0%,
-          100% {
-            transform: translateY(0) translateX(0);
-            opacity: 0.3;
-          }
-          50% {
-            transform: translateY(-20px) translateX(10px);
-            opacity: 0.6;
-          }
-        }
-      `}</style>
     </div>
   )
 }
-
