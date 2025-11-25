@@ -240,8 +240,13 @@ export async function startGame(
     .eq('room_id', roomId)
     .eq('connected', true)
 
-  if (!players || players.length < 2) {
-    return { success: false, error: 'Se necesitan al menos 2 jugadores' }
+  // Allow testing with 1 player (host only), but recommend 2+ for proper gameplay
+  if (!players || players.length < 1) {
+    return { success: false, error: 'Se necesita al menos 1 jugador' }
+  }
+  
+  if (players.length < 2) {
+    console.warn('Testing mode: Starting game with only 1 player')
   }
 
   // Generate game
@@ -353,5 +358,54 @@ export async function updatePlayerConnection(roomId: string, userId: string, con
     })
     .eq('room_id', roomId)
     .eq('user_id', userId)
+}
+
+// Helper function to create test/bot players for testing
+export async function createTestPlayers(roomId: string, count: number = 2): Promise<{ success: boolean; error: string | null }> {
+  const supabase = createClient()
+
+  try {
+    // Check current player count
+    const { data: currentPlayers } = await supabase
+      .from('players')
+      .select('id')
+      .eq('room_id', roomId)
+
+    const currentCount = currentPlayers?.length || 0
+    const totalAfter = currentCount + count
+
+    if (totalAfter > MAX_PLAYERS) {
+      return { success: false, error: `No puedes agregar ${count} jugadores. Máximo permitido: ${MAX_PLAYERS}` }
+    }
+
+    // Generate test player names
+    const testNames = ['Bot Alice', 'Bot Bob', 'Bot Charlie', 'Bot Diana', 'Bot Eve', 'Bot Frank', 'Bot Grace', 'Bot Henry']
+    
+    // Create test players with fake user_ids
+    const testPlayers = []
+    for (let i = 0; i < count; i++) {
+      const fakeUserId = `test-${Date.now()}-${Math.random().toString(36).substring(7)}`
+      testPlayers.push({
+        room_id: roomId,
+        user_id: fakeUserId,
+        name: testNames[i] || `Bot ${i + 1}`,
+        alive: true,
+        cards: 0,
+        connected: true,
+      })
+    }
+
+    const { error } = await supabase
+      .from('players')
+      .insert(testPlayers)
+
+    if (error) {
+      return { success: false, error: 'Error al crear jugadores de prueba' }
+    }
+
+    return { success: true, error: null }
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Error al crear jugadores de prueba' }
+  }
 }
 

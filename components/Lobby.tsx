@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useRoom } from '@/hooks/useRoom'
-import { startGame, leaveRoom, updatePlayerConnection } from '@/lib/roomManager'
-import { Copy, Check, Users, Play, LogOut, Wifi, WifiOff } from 'lucide-react'
+import { startGame, leaveRoom, updatePlayerConnection, createTestPlayers } from '@/lib/roomManager'
+import { Copy, Check, Users, Play, LogOut, Wifi, WifiOff, UserPlus } from 'lucide-react'
 
 interface LobbyProps {
   roomId: string
@@ -15,6 +15,7 @@ interface LobbyProps {
 export default function Lobby({ roomId, roomCode }: LobbyProps) {
   const [copied, setCopied] = useState(false)
   const [starting, setStarting] = useState(false)
+  const [addingBots, setAddingBots] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
   const { user } = useAuth()
@@ -82,6 +83,25 @@ export default function Lobby({ roomId, roomCode }: LobbyProps) {
     }
   }
 
+  const handleAddTestPlayers = async () => {
+    if (!isHost) return
+
+    setAddingBots(true)
+    setError(null)
+
+    try {
+      // Add 2 test players
+      const result = await createTestPlayers(roomId, 2)
+      if (!result.success) {
+        setError(result.error || 'Error al agregar jugadores de prueba')
+      }
+    } catch (err: any) {
+      setError(err.message || 'Error al agregar jugadores de prueba')
+    } finally {
+      setAddingBots(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
@@ -110,7 +130,7 @@ export default function Lobby({ roomId, roomCode }: LobbyProps) {
   }
 
   const connectedPlayers = players.filter((p) => p.connected)
-  const canStart = isHost && connectedPlayers.length >= 2
+  const canStart = isHost && connectedPlayers.length >= 1
 
   return (
     <div className="min-h-screen p-4 bg-[#0a0a0a]">
@@ -201,6 +221,32 @@ export default function Lobby({ roomId, roomCode }: LobbyProps) {
           </div>
         </div>
 
+        {/* Add Test Players Button (Host only) */}
+        {isHost && connectedPlayers.length < 3 && (
+          <div className="glass rounded-lg p-4">
+            <button
+              onClick={handleAddTestPlayers}
+              disabled={addingBots}
+              className="w-full py-3 px-4 bg-yellow-600 hover:bg-yellow-700 text-white font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {addingBots ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Agregando...
+                </>
+              ) : (
+                <>
+                  <UserPlus className="w-4 h-4" />
+                  Agregar 2 Jugadores de Prueba
+                </>
+              )}
+            </button>
+            <p className="text-center text-xs text-gray-500 mt-2">
+              (Para testing - se agregarán bots automáticamente)
+            </p>
+          </div>
+        )}
+
         {/* Start Game Button (Host only) */}
         {isHost && (
           <div className="glass rounded-lg p-6">
@@ -221,9 +267,14 @@ export default function Lobby({ roomId, roomCode }: LobbyProps) {
                 </>
               )}
             </button>
-            {!canStart && connectedPlayers.length < 2 && (
+            {!canStart && connectedPlayers.length < 1 && (
               <p className="text-center text-sm text-gray-400 mt-2">
-                Se necesitan al menos 2 jugadores para iniciar
+                Se necesita al menos 1 jugador para iniciar
+              </p>
+            )}
+            {connectedPlayers.length === 1 && (
+              <p className="text-center text-sm text-yellow-400 mt-2">
+                ⚠️ Modo testing: Iniciando con 1 jugador (se recomienda 2+ para mejor experiencia)
               </p>
             )}
           </div>
