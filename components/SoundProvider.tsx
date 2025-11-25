@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useContext, ReactNode } from 'react'
-import { useSound } from '@/hooks/useSound'
+import { useSound, type SoundKey, type UseSoundOptions } from '@/hooks/useSound'
 
 interface SoundContextType {
   enabled: boolean
@@ -12,17 +12,9 @@ interface SoundContextType {
     uiSounds: number
     dramaticEffects: number
   }
-  play: (
-    soundKey: string,
-    options?: {
-      volume?: number
-      loop?: boolean
-      fadeIn?: number
-      fadeOut?: number
-    }
-  ) => void | number
-  stop: (soundKey: string) => void
-  stopWithFade: (soundKey: string, fadeOut?: number) => void
+  play: (soundKey: SoundKey, options?: UseSoundOptions) => void | number
+  stop: (soundKey: SoundKey) => void
+  stopWithFade: (soundKey: SoundKey, fadeOut?: number) => void
   setEnabled: (enabled: boolean) => void
   setSoundVolume: (volume: number) => void
   setVolumeType: (type: 'introMusic' | 'ambientMusic' | 'uiSounds' | 'dramaticEffects', volume: number) => void

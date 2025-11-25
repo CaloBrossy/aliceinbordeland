@@ -46,12 +46,12 @@ const soundFiles = {
   tension: '/sounds/ambientMusic.mp3', // Sonido de tensión (usar ambientMusic como fallback)
 }
 
-type SoundKey = keyof typeof soundFiles
+export type SoundKey = keyof typeof soundFiles
 
 // Tipos de volumen
 export type VolumeType = 'introMusic' | 'ambientMusic' | 'uiSounds' | 'dramaticEffects'
 
-interface UseSoundOptions {
+export interface UseSoundOptions {
   volume?: number
   loop?: boolean
   autoplay?: boolean
