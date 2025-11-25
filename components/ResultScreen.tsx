@@ -112,6 +112,18 @@ export default function ResultScreen({ roomId, roomCode }: ResultScreenProps) {
     setDeathPlayerName(null)
   }
 
+  // Early return if game or room not loaded
+  if (!game || !room) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-400">Cargando resultados...</p>
+        </div>
+      </div>
+    )
+  }
+
   const handleNextGame = async () => {
     if (!isHost || !user) return
 
@@ -263,7 +275,7 @@ export default function ResultScreen({ roomId, roomCode }: ResultScreenProps) {
             </div>
             <div className="p-4 bg-[#0a0a0a] rounded-lg">
               <p className="text-sm text-gray-400 mb-1">Dificultad</p>
-              <p className="text-2xl font-bold text-white">{game.difficulty || 'N/A'}</p>
+              <p className="text-2xl font-bold text-white">{game?.difficulty || 'N/A'}</p>
             </div>
           </div>
         </div>
