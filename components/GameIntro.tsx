@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { useGSAP } from '@/hooks/useGSAP'
+import { useSoundContext } from '@/components/SoundProvider'
 import { getSuitEmoji, getSuitName } from '@/data/gamesLibrary'
 import type { Game } from '@/types/game'
 import { X, Play } from 'lucide-react'
@@ -17,6 +18,7 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
   const [currentStep, setCurrentStep] = useState(0)
   const [countdown, setCountdown] = useState<number | null>(null)
   const [skippable, setSkippable] = useState(false)
+  const sound = useSoundContext()
   
   const containerRef = useRef<HTMLDivElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
@@ -32,6 +34,14 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
 
   const suitEmoji = getSuitEmoji(game.suit)
   const suitName = getSuitName(game.suit)
+
+  // Play intro music
+  useEffect(() => {
+    sound.playBgMusic('bgmIntro')
+    return () => {
+      sound.stopBgMusic()
+    }
+  }, [sound])
 
   // Animation sequence
   useEffect(() => {
@@ -59,6 +69,9 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
           rotation: 0,
           duration: 1.2,
           ease: 'back.out(1.7)',
+          onStart: () => {
+            sound.play('gameStart')
+          },
         }
       )
       // Add glow effect to card
@@ -78,6 +91,9 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
           y: 0,
           duration: 0.8,
           ease: 'power3.out',
+          onStart: () => {
+            sound.play('reveal')
+          },
         },
         '-=0.3'
       )
@@ -185,6 +201,9 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
     if (countdown === null) return
 
     if (countdown > 0) {
+      // Play countdown sound
+      sound.play('countdown', { volume: 0.8 })
+      
       const timer = setTimeout(() => {
         setCountdown(countdown - 1)
         // Animate countdown number
@@ -209,13 +228,16 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
       return () => clearTimeout(timer)
     } else {
       // Countdown finished, start game
+      sound.play('gameStart', { volume: 0.9 })
       setTimeout(() => {
         handleFadeOutAndStart()
       }, 500)
     }
-  }, [countdown])
+  }, [countdown, sound])
 
   const handleStart = () => {
+    sound.play('click')
+    sound.stopBgMusic()
     setCountdown(3)
   }
 
@@ -223,7 +245,10 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
     if (!containerRef.current) return
 
     const tl = gsap.timeline({
-      onComplete: onStart,
+      onComplete: () => {
+        sound.playBgMusic('bgmGame')
+        onStart()
+      },
     })
 
     tl.to(containerRef.current, {
@@ -234,6 +259,8 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
   }
 
   const handleSkip = () => {
+    sound.play('click')
+    sound.stopBgMusic()
     handleFadeOutAndStart()
   }
 

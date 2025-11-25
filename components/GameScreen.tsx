@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useRoom } from '@/hooks/useRoom'
 import { useGame } from '@/hooks/useGame'
 import { useGSAP } from '@/hooks/useGSAP'
+import { useSoundContext } from '@/components/SoundProvider'
 import { endGame, leaveRoom, updatePlayerConnection } from '@/lib/roomManager'
 import { checkGameCompletion } from '@/lib/gameLogic'
 import HeartsGame from './games/HeartsGame'
@@ -30,6 +31,7 @@ export default function GameScreen({ roomId, roomCode }: GameScreenProps) {
   const { room, players } = useRoom(roomId)
   const { gameState, updateTimer } = useGame(roomId)
   const gsap = useGSAP()
+  const sound = useSoundContext()
 
   const isHost = room?.host_id === user?.id
   const game = room?.current_game as Game | null
@@ -79,8 +81,26 @@ export default function GameScreen({ roomId, roomCode }: GameScreenProps) {
     if (timer > 0 && timer <= 60 && timerRef.current) {
       // Pulse animation when timer is low
       gsap.animatePulse(timerRef.current, 1)
+      // Play heartbeat sound when timer is very low
+      if (timer <= 30 && timer > 0) {
+        sound.play('heartbeat', { volume: 0.3, loop: true })
+      } else {
+        sound.stop('heartbeat')
+      }
+    } else {
+      sound.stop('heartbeat')
     }
-  }, [timer, gsap])
+  }, [timer, gsap, sound])
+
+  // Play tick sound for countdown
+  useEffect(() => {
+    if (timer > 0 && timer <= 10) {
+      const tickInterval = setInterval(() => {
+        sound.play('tick', { volume: 0.5 })
+      }, 1000)
+      return () => clearInterval(tickInterval)
+    }
+  }, [timer, sound])
 
   useEffect(() => {
     if (timer <= 0 || !gameState) return

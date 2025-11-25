@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useGame } from '@/hooks/useGame'
 import { useGSAP } from '@/hooks/useGSAP'
+import { useSoundContext } from '@/components/SoundProvider'
 import type { HeartsGame, Player } from '@/types/game'
 import { validateVote, calculateVoteResults } from '@/lib/gameLogic'
 import { Users, Vote } from 'lucide-react'
@@ -18,6 +19,7 @@ export default function HeartsGameComponent({ game, players, roomId }: HeartsGam
   const { user } = useAuth()
   const { gameState, submitVote, nextRound } = useGame(roomId)
   const gsap = useGSAP()
+  const sound = useSoundContext()
   const [selectedTarget, setSelectedTarget] = useState<string | null>(null)
   const [voted, setVoted] = useState(false)
   const [revealed, setRevealed] = useState(false)
@@ -44,10 +46,11 @@ export default function HeartsGameComponent({ game, players, roomId }: HeartsGam
       if (revealResultsRef.current) {
         setTimeout(() => {
           gsap.animateReveal(revealResultsRef.current)
+          sound.play('reveal', { volume: 0.8 })
         }, 100)
       }
     }
-  }, [votes, currentPlayer, alivePlayers, revealed, gameState, gsap])
+  }, [votes, currentPlayer, alivePlayers, revealed, gameState, gsap, sound])
 
   const handleVote = async (targetId: string) => {
     if (!currentPlayer || !gameState) return
@@ -67,6 +70,7 @@ export default function HeartsGameComponent({ game, players, roomId }: HeartsGam
     if (result.success) {
       setSelectedTarget(targetId)
       setVoted(true)
+      sound.play('vote', { volume: 0.7 })
       // Pulse animation on successful vote
       const button = voteButtonsRef.current.find((el) => el && el.dataset.playerId === targetId)
       if (button) {

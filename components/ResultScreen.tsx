@@ -7,6 +7,7 @@ import { useRoom } from '@/hooks/useRoom'
 import { nextGame, leaveRoom } from '@/lib/roomManager'
 import { calculateGameResults } from '@/lib/gameLogic'
 import { useGSAP } from '@/hooks/useGSAP'
+import { useSoundContext } from '@/components/SoundProvider'
 import { Trophy, Skull, Users, LogOut, Play, Home } from 'lucide-react'
 
 interface ResultScreenProps {
@@ -21,6 +22,7 @@ export default function ResultScreen({ roomId, roomCode }: ResultScreenProps) {
   const { user } = useAuth()
   const { room, players } = useRoom(roomId)
   const gsap = useGSAP()
+  const sound = useSoundContext()
 
   const isHost = room?.host_id === user?.id
   const game = room?.current_game as any
@@ -45,14 +47,21 @@ export default function ResultScreen({ roomId, roomCode }: ResultScreenProps) {
 
   const results = calculateGameResults(game, { timer: 0, round: 1, votes: {}, answers: {}, current_turn: null, id: '', room_id: roomId, updated_at: '' }, players)
 
+  // Stop game music on mount
+  useEffect(() => {
+    sound.stopBgMusic()
+  }, [sound])
+
   // Animate results on mount
   useEffect(() => {
     if (results.gameClear && gameClearRef.current) {
       gsap.animateGameClear(gameClearRef.current)
+      sound.play('gameClear', { volume: 0.9 })
     } else if (!results.gameClear && gameOverRef.current) {
       gsap.animateGameOver(gameOverRef.current)
+      sound.play('gameOver', { volume: 0.9 })
     }
-  }, [results.gameClear, gsap])
+  }, [results.gameClear, gsap, sound])
 
   // Animate survivors
   useEffect(() => {
@@ -72,11 +81,12 @@ export default function ResultScreen({ roomId, roomCode }: ResultScreenProps) {
         validItems.forEach((element, index) => {
           setTimeout(() => {
             gsap.animateDeath(element)
+            sound.play('death', { volume: 0.6 })
           }, index * 200) // Stagger deaths
         })
       }
     }
-  }, [results.eliminated, gsap])
+  }, [results.eliminated, gsap, sound])
 
   const handleNextGame = async () => {
     if (!isHost || !user) return
