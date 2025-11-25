@@ -22,6 +22,7 @@ export default function ResultScreen({ roomId, roomCode }: ResultScreenProps) {
   const { user } = useAuth()
   const { room, players } = useRoom(roomId)
   const gsap = useGSAP()
+  const { playSound } = useSounds()
   const sound = useSoundContext()
 
   const isHost = room?.host_id === user?.id

@@ -206,6 +206,8 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
       
       const timer = setTimeout(() => {
         setCountdown(countdown - 1)
+        // Play countdown sound
+        playSound('countdown')
         // Animate countdown number
         if (countdownRef.current) {
           gsap.fromTo(
