@@ -91,23 +91,23 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-[#0a0a0a]">
-      <div className="w-full max-w-md space-y-8">
+    <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 md:p-8 bg-[#0a0a0a]">
+      <div className="w-full max-w-md sm:max-w-lg md:max-w-xl space-y-6 sm:space-y-8">
         {/* Title */}
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-white mb-2">Alice in Borderland</h1>
-          <p className="text-gray-400">Juego Multijugador en Tiempo Real</p>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-2 sm:mb-3">Alice in Borderland</h1>
+          <p className="text-sm sm:text-base text-gray-400">Juego Multijugador en Tiempo Real</p>
         </div>
 
         {/* Main Card */}
-        <div className="glass rounded-lg p-8 space-y-6">
+        <div className="glass rounded-lg p-6 sm:p-8 space-y-4 sm:space-y-6">
           {!showJoinForm ? (
             <>
               {/* Create Room Button */}
               <button
                 onClick={handleCreateRoom}
                 disabled={loading}
-                className="w-full py-4 px-6 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-3 sm:py-4 px-6 text-base sm:text-lg bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
@@ -153,7 +153,7 @@ export default function Home() {
                   onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
                   placeholder="ABC123"
                   maxLength={6}
-                  className="w-full px-4 py-3 bg-[#0a0a0a] border border-red-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-600 font-mono text-center text-2xl tracking-widest"
+                  className="w-full px-4 py-3 sm:py-4 bg-[#0a0a0a] border border-red-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-600 font-mono text-center text-xl sm:text-2xl md:text-3xl tracking-widest"
                   autoFocus
                 />
               </div>

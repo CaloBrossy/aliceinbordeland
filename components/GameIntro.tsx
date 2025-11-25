@@ -503,12 +503,12 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
         </button>
       )}
 
-      <div className="max-w-5xl mx-auto px-4 space-y-8 text-center relative z-10">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 md:px-8 space-y-6 sm:space-y-8 text-center relative z-10">
         {/* Card Symbol - ENORME */}
-        <div className="relative mb-8">
+        <div className="relative mb-4 sm:mb-8">
           <div
             ref={cardRef}
-            className="text-[15rem] relative mx-auto"
+            className="text-[8rem] sm:text-[12rem] md:text-[15rem] relative mx-auto"
             style={{
               textShadow: '0 0 60px rgba(233, 69, 96, 1), 0 0 120px rgba(233, 69, 96, 0.6), 0 0 180px rgba(233, 69, 96, 0.4)',
               filter: 'drop-shadow(0 0 40px rgba(233, 69, 96, 0.8))',
@@ -522,10 +522,10 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
         </div>
 
         {/* Title with typing animation */}
-        <div ref={titleRef} style={{ opacity: 0 }} className="mb-6">
+        <div ref={titleRef} style={{ opacity: 0 }} className="mb-4 sm:mb-6">
           <h1
             ref={titleTextRef}
-            className={`text-6xl font-bold text-white mb-2 tracking-wider ${
+            className={`text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-2 tracking-wider ${
               glitchActive ? 'glitch' : ''
             }`}
             data-text={fullTitle}
@@ -541,13 +541,13 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
             ref={underlineRef}
             className="h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent mx-auto"
             style={{
-              maxWidth: '600px',
+              maxWidth: '100%',
               transformOrigin: 'left',
               boxShadow: '0 0 20px rgba(233, 69, 96, 0.8)',
             }}
           />
           <h2
-            className="text-3xl font-bold text-red-500 mt-4 neon-red"
+            className="text-xl sm:text-2xl md:text-3xl font-bold text-red-500 mt-3 sm:mt-4 neon-red"
             style={{
               textShadow: '0 0 20px rgba(233, 69, 96, 0.8)',
             }}
@@ -558,16 +558,16 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
 
         {/* Difficulty with visual bars */}
         {currentStep >= 2 && (
-          <div ref={difficultyRef} style={{ opacity: 0 }} className="mb-8">
-            <p className="text-2xl font-bold text-gray-300 mb-4">JUEGO DE {suitName.toUpperCase()} - DIFICULTAD</p>
-            <div className="flex items-center justify-center gap-2 mb-4">
+          <div ref={difficultyRef} style={{ opacity: 0 }} className="mb-4 sm:mb-8">
+            <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-300 mb-3 sm:mb-4">JUEGO DE {suitName.toUpperCase()} - DIFICULTAD</p>
+            <div className="flex items-center justify-center gap-1 sm:gap-2 mb-3 sm:mb-4 px-4">
               {difficultyBars.map((filled, index) => (
                 <div
                   key={index}
                   ref={(el) => {
                     if (el) difficultyBarsRef.current[index] = el
                   }}
-                  className="h-8 flex-1 max-w-[40px] origin-left"
+                  className="h-6 sm:h-8 flex-1 max-w-[30px] sm:max-w-[40px] origin-left"
                   style={{
                     transform: 'scaleX(0)',
                     background: filled
@@ -581,7 +581,7 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
                 />
               ))}
             </div>
-            <p className="text-5xl font-bold neon-red">{game.difficulty}/10</p>
+            <p className="text-3xl sm:text-4xl md:text-5xl font-bold neon-red">{game.difficulty}/10</p>
           </div>
         )}
 
@@ -589,11 +589,11 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
         {currentStep >= 3 && (
           <div
             ref={situationRef}
-            className="glass-strong rounded-lg p-8 max-w-3xl mx-auto border border-red-600/30"
+            className="glass-strong rounded-lg p-4 sm:p-6 md:p-8 max-w-3xl mx-auto border border-red-600/30"
             style={{ opacity: 0 }}
           >
-            <h3 className="text-2xl font-bold text-red-500 mb-6 neon-red">SITUACIÓN:</h3>
-            <p className="text-xl text-gray-200 leading-relaxed">{content.situation}</p>
+            <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-red-500 mb-4 sm:mb-6 neon-red">SITUACIÓN:</h3>
+            <p className="text-base sm:text-lg md:text-xl text-gray-200 leading-relaxed">{content.situation}</p>
             <span className="inline-block w-2 h-6 bg-red-500 ml-2 animate-pulse" />
           </div>
         )}
@@ -602,29 +602,29 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
         {currentStep >= 4 && (
           <div
             ref={rulesRef}
-            className="max-w-3xl mx-auto space-y-4"
+            className="max-w-3xl mx-auto space-y-3 sm:space-y-4"
             style={{ opacity: 0 }}
           >
-            <h3 className="text-2xl font-bold text-red-500 mb-6 neon-red">REGLAS:</h3>
-            <div className="space-y-3">
+            <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-red-500 mb-4 sm:mb-6 neon-red">REGLAS:</h3>
+            <div className="space-y-2 sm:space-y-3">
               {content.rules.map((rule, index) => (
                 <div
                   key={index}
                   ref={(el) => {
                     if (el) ruleItemsRef.current[index] = el
                   }}
-                  className="glass rounded-lg p-4 flex items-start gap-4 hover:neon-shadow-red transition-all"
+                  className="glass rounded-lg p-3 sm:p-4 flex items-start gap-3 sm:gap-4 hover:neon-shadow-red transition-all"
                   style={{ opacity: 0 }}
                 >
                   <div
-                    className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center flex-shrink-0 neon-shadow-red"
+                    className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-red-600 flex items-center justify-center flex-shrink-0 neon-shadow-red"
                     style={{
                       boxShadow: '0 0 20px rgba(233, 69, 96, 0.8)',
                     }}
                   >
-                    <span className="text-white font-bold text-lg">{index + 1}</span>
+                    <span className="text-white font-bold text-sm sm:text-lg">{index + 1}</span>
                   </div>
-                  <p className="text-lg text-gray-200 flex-1 text-left">{rule}</p>
+                  <p className="text-sm sm:text-base md:text-lg text-gray-200 flex-1 text-left">{rule}</p>
                 </div>
               ))}
             </div>
@@ -635,11 +635,11 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
         {currentStep >= 5 && (
           <div
             ref={conditionsRef}
-            className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto"
+            className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 max-w-3xl mx-auto"
             style={{ opacity: 0 }}
           >
             <div
-              className="glass-strong rounded-lg p-6 border-2 relative overflow-hidden"
+              className="glass-strong rounded-lg p-4 sm:p-6 border-2 relative overflow-hidden"
               style={{
                 borderColor: 'rgba(78, 204, 163, 0.5)',
                 boxShadow: '0 0 30px rgba(78, 204, 163, 0.3), inset 0 0 30px rgba(78, 204, 163, 0.1)',
@@ -651,11 +651,11 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
                   background: 'linear-gradient(45deg, rgba(78, 204, 163, 0.3), transparent)',
                 }}
               />
-              <h4 className="text-green-400 font-bold mb-3 text-xl neon-green relative z-10">✓ VICTORIA:</h4>
-              <p className="text-gray-200 relative z-10">{content.victory}</p>
+              <h4 className="text-green-400 font-bold mb-2 sm:mb-3 text-lg sm:text-xl neon-green relative z-10">✓ VICTORIA:</h4>
+              <p className="text-sm sm:text-base text-gray-200 relative z-10">{content.victory}</p>
             </div>
             <div
-              className="glass-strong rounded-lg p-6 border-2 relative overflow-hidden"
+              className="glass-strong rounded-lg p-4 sm:p-6 border-2 relative overflow-hidden"
               style={{
                 borderColor: 'rgba(233, 69, 96, 0.5)',
                 boxShadow: '0 0 30px rgba(233, 69, 96, 0.3), inset 0 0 30px rgba(233, 69, 96, 0.1)',
@@ -667,8 +667,8 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
                   background: 'linear-gradient(45deg, rgba(233, 69, 96, 0.3), transparent)',
                 }}
               />
-              <h4 className="text-red-400 font-bold mb-3 text-xl neon-red relative z-10">✗ DERROTA:</h4>
-              <p className="text-gray-200 relative z-10">{content.defeat}</p>
+              <h4 className="text-red-400 font-bold mb-2 sm:mb-3 text-lg sm:text-xl neon-red relative z-10">✗ DERROTA:</h4>
+              <p className="text-sm sm:text-base text-gray-200 relative z-10">{content.defeat}</p>
             </div>
           </div>
         )}
@@ -677,14 +677,14 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
         {currentStep >= 6 && (
           <div
             ref={timerRef}
-            className="glass-strong rounded-lg p-6 max-w-md mx-auto border-2"
+            className="glass-strong rounded-lg p-4 sm:p-6 max-w-md mx-auto border-2"
             style={{
               opacity: 0,
               borderColor: 'rgba(233, 69, 96, 0.5)',
               boxShadow: '0 0 30px rgba(233, 69, 96, 0.4)',
             }}
           >
-            <p className="text-2xl font-bold text-red-400 neon-red">
+            <p className="text-lg sm:text-xl md:text-2xl font-bold text-red-400 neon-red">
               TIEMPO LÍMITE: {Math.floor(game.timeLimit / 60)} minutos
             </p>
           </div>
@@ -695,7 +695,7 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
           <div className="fixed inset-0 flex items-center justify-center bg-black/95 z-50">
             <div className="relative">
               {/* SVG Circle */}
-              <svg className="w-64 h-64 transform -rotate-90" viewBox="0 0 200 200">
+              <svg className="w-48 h-48 sm:w-64 sm:h-64 transform -rotate-90" viewBox="0 0 200 200">
                 <circle
                   cx="100"
                   cy="100"
@@ -723,7 +723,7 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
               {/* Countdown number */}
               <div
                 ref={countdownRef}
-                className="absolute inset-0 flex items-center justify-center text-9xl font-bold text-red-500"
+                className="absolute inset-0 flex items-center justify-center text-6xl sm:text-8xl md:text-9xl font-bold text-red-500"
                 style={{
                   textShadow: '0 0 60px rgba(233, 69, 96, 1), 0 0 120px rgba(233, 69, 96, 0.6)',
                   filter: 'drop-shadow(0 0 40px rgba(233, 69, 96, 1))',
@@ -737,11 +737,11 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
 
         {/* Start Button */}
         {currentStep >= 7 && countdown === null && (
-          <div className="mt-8">
+          <div className="mt-6 sm:mt-8">
             <button
               ref={startButtonRef}
               onClick={handleStart}
-              className="px-16 py-5 text-2xl font-bold rounded-lg transition-all btn-base relative overflow-hidden group"
+              className="w-full sm:w-auto px-8 sm:px-12 md:px-16 py-4 sm:py-5 text-lg sm:text-xl md:text-2xl font-bold rounded-lg transition-all btn-base relative overflow-hidden group"
               style={{
                 background: 'linear-gradient(135deg, #e94560, #ff0033)',
                 color: 'white',
@@ -749,8 +749,8 @@ export default function GameIntro({ game, onStart, onSkip }: GameIntroProps) {
                 border: '2px solid rgba(233, 69, 96, 0.5)',
               }}
             >
-              <span className="relative z-10 flex items-center gap-3">
-                <Play className="w-6 h-6" />
+              <span className="relative z-10 flex items-center justify-center gap-2 sm:gap-3">
+                <Play className="w-5 h-5 sm:w-6 sm:h-6" />
                 INICIAR JUEGO
               </span>
               {/* Scanning border effect */}

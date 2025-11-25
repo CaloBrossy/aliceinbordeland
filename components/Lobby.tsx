@@ -167,14 +167,14 @@ export default function Lobby({ roomId, roomCode }: LobbyProps) {
   const canStart = isHost && connectedPlayers.length >= 1
 
   return (
-    <div className="min-h-screen p-4 bg-[#0a0a0a]">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="min-h-screen p-4 sm:p-6 md:p-8 bg-[#0a0a0a]">
+      <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-white">Sala de Espera</h1>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white">Sala de Espera</h1>
           <button
             onClick={handleLeave}
-            className="flex items-center gap-2 px-4 py-2 border border-gray-700 text-gray-300 rounded-lg hover:bg-gray-800 transition-colors"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 sm:py-2 border border-gray-700 text-gray-300 rounded-lg hover:bg-gray-800 transition-colors text-sm sm:text-base"
           >
             <LogOut className="w-4 h-4" />
             Salir
@@ -182,11 +182,11 @@ export default function Lobby({ roomId, roomCode }: LobbyProps) {
         </div>
 
         {/* Room Code Card */}
-        <div className="glass rounded-lg p-6">
-          <div className="text-center space-y-4">
-            <p className="text-sm text-gray-400">Código de Sala</p>
-            <div className="flex items-center justify-center gap-4">
-              <div className="text-5xl font-mono font-bold text-white tracking-widest">
+        <div className="glass rounded-lg p-4 sm:p-6">
+          <div className="text-center space-y-3 sm:space-y-4">
+            <p className="text-xs sm:text-sm text-gray-400">Código de Sala</p>
+            <div className="flex items-center justify-center gap-3 sm:gap-4">
+              <div className="text-3xl sm:text-4xl md:text-5xl font-mono font-bold text-white tracking-widest">
                 {roomCode}
               </div>
               <button
@@ -208,10 +208,10 @@ export default function Lobby({ roomId, roomCode }: LobbyProps) {
         </div>
 
         {/* Players List */}
-        <div className="glass rounded-lg p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              <Users className="w-5 h-5" />
+        <div className="glass rounded-lg p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-4">
+            <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+              <Users className="w-4 h-4 sm:w-5 sm:h-5" />
               Jugadores ({connectedPlayers.length}/{players.length})
             </h2>
             {isHost && (
@@ -221,11 +221,11 @@ export default function Lobby({ roomId, roomCode }: LobbyProps) {
             )}
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2 sm:space-y-3">
             {players.map((player) => (
               <div
                 key={player.id}
-                className={`flex items-center justify-between p-4 rounded-lg ${
+                className={`flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 p-3 sm:p-4 rounded-lg ${
                   player.user_id === user?.id
                     ? 'bg-red-600/20 border border-red-600'
                     : 'bg-[#0a0a0a] border border-gray-800'

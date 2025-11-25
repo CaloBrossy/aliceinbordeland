@@ -247,11 +247,11 @@ export default function GameScreen({ roomId, roomCode }: GameScreenProps) {
             background: 'linear-gradient(90deg, rgba(233, 69, 96, 0.1), transparent, rgba(0, 217, 255, 0.1))',
           }}
         />
-        <div className="relative z-10 p-4">
-          <div className="max-w-6xl mx-auto flex items-center justify-between flex-wrap gap-4">
-            <div ref={gameCardRef} className="flex items-center gap-4">
+        <div className="relative z-10 p-3 sm:p-4">
+          <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+            <div ref={gameCardRef} className="flex items-center gap-2 sm:gap-4">
               <div
-                className="text-4xl"
+                className="text-2xl sm:text-3xl md:text-4xl"
                 style={{
                   filter: 'drop-shadow(0 0 20px rgba(233, 69, 96, 0.8))',
                   textShadow: '0 0 30px rgba(233, 69, 96, 0.6)',
@@ -262,36 +262,36 @@ export default function GameScreen({ roomId, roomCode }: GameScreenProps) {
               <div>
                 <h1
                   ref={gameTitleRef}
-                  className="text-2xl font-bold text-white mb-1"
+                  className="text-lg sm:text-xl md:text-2xl font-bold text-white mb-1"
                   style={{
                     textShadow: '2px 2px 0px rgba(233, 69, 96, 0.5)',
                   }}
                 >
                   {game.card}
                 </h1>
-                <p className="text-sm text-gray-400">{game.name}</p>
+                <p className="text-xs sm:text-sm text-gray-400">{game.name}</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-6 flex-wrap">
+            <div className="flex flex-wrap items-center gap-3 sm:gap-4 md:gap-6 w-full sm:w-auto">
               {/* Timer - Mejorado */}
               <div
                 ref={timerRef}
-                className="glass rounded-lg px-4 py-2 flex items-center gap-2"
+                className="glass rounded-lg px-3 sm:px-4 py-2 flex items-center gap-2"
                 style={{
                   border: '1px solid rgba(233, 69, 96, 0.3)',
                   boxShadow: timer < 60 ? '0 0 20px rgba(233, 69, 96, 0.4)' : 'none',
                 }}
               >
                 <Clock
-                  className={`w-5 h-5 ${timer < 60 ? 'text-red-500' : 'text-gray-400'}`}
+                  className={`w-4 h-4 sm:w-5 sm:h-5 ${timer < 60 ? 'text-red-500' : 'text-gray-400'}`}
                   style={{
                     filter: timer < 60 ? 'drop-shadow(0 0 10px rgba(233, 69, 96, 0.8))' : 'none',
                   }}
                 />
                 <span
                   ref={timerTextRef}
-                  className={`font-mono font-bold text-lg ${
+                  className={`font-mono font-bold text-base sm:text-lg ${
                     timer < 60 ? 'text-red-500' : 'text-white'
                   }`}
                   style={{
@@ -304,14 +304,14 @@ export default function GameScreen({ roomId, roomCode }: GameScreenProps) {
 
               {/* Alive Players - Mejorado */}
               <div
-                className="glass rounded-lg px-4 py-2 flex items-center gap-2"
+                className="glass rounded-lg px-3 sm:px-4 py-2 flex items-center gap-2"
                 style={{
                   border: '1px solid rgba(78, 204, 163, 0.3)',
                   boxShadow: '0 0 20px rgba(78, 204, 163, 0.2)',
                 }}
               >
-                <Users className="w-5 h-5 text-green-400" style={{ filter: 'drop-shadow(0 0 10px rgba(78, 204, 163, 0.8))' }} />
-                <span className="text-white font-bold text-lg">
+                <Users className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" style={{ filter: 'drop-shadow(0 0 10px rgba(78, 204, 163, 0.8))' }} />
+                <span className="text-white font-bold text-base sm:text-lg">
                   <span className="text-green-400">{alivePlayers.length}</span>
                   <span className="text-gray-400">/{players.length}</span>
                 </span>
@@ -332,15 +332,15 @@ export default function GameScreen({ roomId, roomCode }: GameScreenProps) {
       </div>
 
       {/* Players Grid */}
-      <div className="p-4 border-b border-red-600/20">
+      <div className="p-4 sm:p-6 border-b border-red-600/20">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-            <Users className="w-5 h-5 text-cyan-400" />
+          <h2 className="text-lg sm:text-xl font-bold text-white mb-3 sm:mb-4 flex items-center gap-2">
+            <Users className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
             Jugadores
           </h2>
           <div
             ref={playersGridRef}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4"
           >
             {players.map((player) => (
               <div key={player.id} data-player-card>
@@ -355,8 +355,8 @@ export default function GameScreen({ roomId, roomCode }: GameScreenProps) {
       </div>
 
       {/* Main Game Area */}
-      <div className="flex-1 p-4 overflow-y-auto">
-        <div ref={gameContentRef} className="max-w-4xl mx-auto">
+      <div className="flex-1 p-4 sm:p-6 overflow-y-auto">
+        <div ref={gameContentRef} className="max-w-4xl mx-auto w-full">
           {game.suit === 'hearts' && (
             <HeartsGame game={game as any} players={players} roomId={roomId} />
           )}

@@ -162,35 +162,35 @@ export default function ResultScreen({ roomId, roomCode }: ResultScreenProps) {
         />
       )}
 
-      <div className="min-h-screen p-4 bg-[#0a0a0a]">
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="min-h-screen p-4 sm:p-6 md:p-8 bg-[#0a0a0a]">
+        <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
         {/* Result Header */}
-        <div className="text-center space-y-4">
+        <div className="text-center space-y-3 sm:space-y-4">
           {results.gameClear ? (
             <div ref={gameClearRef}>
-              <div className="flex items-center justify-center gap-3">
-                <Trophy className="w-12 h-12 text-yellow-500" />
-                <h1 className="text-4xl font-bold text-green-500">GAME CLEAR</h1>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
+                <Trophy className="w-10 h-10 sm:w-12 sm:h-12 text-yellow-500" />
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-green-500">GAME CLEAR</h1>
               </div>
-              <p className="text-gray-400">¡Al menos un jugador sobrevivió!</p>
+              <p className="text-sm sm:text-base text-gray-400 mt-2">¡Al menos un jugador sobrevivió!</p>
             </div>
           ) : (
             <div ref={gameOverRef}>
-              <div className="flex items-center justify-center gap-3">
-                <Skull className="w-12 h-12 text-red-500" />
-                <h1 className="text-4xl font-bold text-red-500">GAME OVER</h1>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
+                <Skull className="w-10 h-10 sm:w-12 sm:h-12 text-red-500" />
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-red-500">GAME OVER</h1>
               </div>
-              <p className="text-gray-400">Todos los jugadores fueron eliminados</p>
+              <p className="text-sm sm:text-base text-gray-400 mt-2">Todos los jugadores fueron eliminados</p>
             </div>
           )}
         </div>
 
         {/* Game Info */}
         {game && (
-          <div className="glass rounded-lg p-6 text-center">
-            <h2 className="text-2xl font-bold text-white mb-2">{game.name}</h2>
-            <p className="text-gray-400">{game.card}</p>
-            <p className="text-sm text-gray-500 mt-2">{game.description}</p>
+          <div className="glass rounded-lg p-4 sm:p-6 text-center">
+            <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">{game.name}</h2>
+            <p className="text-sm sm:text-base text-gray-400">{game.card}</p>
+            <p className="text-xs sm:text-sm text-gray-500 mt-2">{game.description}</p>
           </div>
         )}
 
@@ -258,35 +258,35 @@ export default function ResultScreen({ roomId, roomCode }: ResultScreenProps) {
         )}
 
         {/* Statistics */}
-        <div className="glass rounded-lg p-6">
-          <h2 className="text-xl font-bold text-white mb-4">Estadísticas</h2>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 bg-[#0a0a0a] rounded-lg">
-              <p className="text-sm text-gray-400 mb-1">Jugadores Totales</p>
-              <p className="text-2xl font-bold text-white">{players.length}</p>
+        <div className="glass rounded-lg p-4 sm:p-6">
+          <h2 className="text-lg sm:text-xl font-bold text-white mb-3 sm:mb-4">Estadísticas</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            <div className="p-3 sm:p-4 bg-[#0a0a0a] rounded-lg">
+              <p className="text-xs sm:text-sm text-gray-400 mb-1">Jugadores Totales</p>
+              <p className="text-xl sm:text-2xl font-bold text-white">{players.length}</p>
             </div>
-            <div className="p-4 bg-[#0a0a0a] rounded-lg">
-              <p className="text-sm text-gray-400 mb-1">Sobrevivientes</p>
-              <p className="text-2xl font-bold text-green-500">{results.survivors.length}</p>
+            <div className="p-3 sm:p-4 bg-[#0a0a0a] rounded-lg">
+              <p className="text-xs sm:text-sm text-gray-400 mb-1">Sobrevivientes</p>
+              <p className="text-xl sm:text-2xl font-bold text-green-500">{results.survivors.length}</p>
             </div>
-            <div className="p-4 bg-[#0a0a0a] rounded-lg">
-              <p className="text-sm text-gray-400 mb-1">Eliminados</p>
-              <p className="text-2xl font-bold text-red-500">{results.eliminated.length}</p>
+            <div className="p-3 sm:p-4 bg-[#0a0a0a] rounded-lg">
+              <p className="text-xs sm:text-sm text-gray-400 mb-1">Eliminados</p>
+              <p className="text-xl sm:text-2xl font-bold text-red-500">{results.eliminated.length}</p>
             </div>
-            <div className="p-4 bg-[#0a0a0a] rounded-lg">
-              <p className="text-sm text-gray-400 mb-1">Dificultad</p>
-              <p className="text-2xl font-bold text-white">{game?.difficulty || 'N/A'}</p>
+            <div className="p-3 sm:p-4 bg-[#0a0a0a] rounded-lg">
+              <p className="text-xs sm:text-sm text-gray-400 mb-1">Dificultad</p>
+              <p className="text-xl sm:text-2xl font-bold text-white">{game?.difficulty || 'N/A'}</p>
             </div>
           </div>
         </div>
 
         {/* Actions (Host only) */}
         {isHost && (
-          <div className="flex gap-4">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <button
               onClick={handleNextGame}
               disabled={loading}
-              className="flex-1 py-4 px-6 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="flex-1 py-3 sm:py-4 px-4 sm:px-6 text-base sm:text-lg bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>
