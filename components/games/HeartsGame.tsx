@@ -19,7 +19,7 @@ export default function HeartsGameComponent({ game, players, roomId }: HeartsGam
   const { user } = useAuth()
   const { gameState, submitVote, nextRound } = useGame(roomId)
   const gsap = useGSAP()
-  const { playSound } = useSounds()
+  const sound = useSoundContext()
   const sound = useSoundContext()
   const [selectedTarget, setSelectedTarget] = useState<string | null>(null)
   const [voted, setVoted] = useState(false)

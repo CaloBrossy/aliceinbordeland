@@ -8,6 +8,7 @@ import { nextGame, leaveRoom } from '@/lib/roomManager'
 import { calculateGameResults } from '@/lib/gameLogic'
 import { useGSAP } from '@/hooks/useGSAP'
 import { useSoundContext } from '@/components/SoundProvider'
+import DeathAnimation from './DeathAnimation'
 import { Trophy, Skull, Users, LogOut, Play, Home } from 'lucide-react'
 
 interface ResultScreenProps {
@@ -22,8 +23,10 @@ export default function ResultScreen({ roomId, roomCode }: ResultScreenProps) {
   const { user } = useAuth()
   const { room, players } = useRoom(roomId)
   const gsap = useGSAP()
-  const { playSound } = useSounds()
   const sound = useSoundContext()
+  const [showDeathAnimation, setShowDeathAnimation] = useState(false)
+  const [deathPlayerName, setDeathPlayerName] = useState<string | null>(null)
+  const [playedDeaths, setPlayedDeaths] = useState<Set<string>>(new Set())
 
   const isHost = room?.host_id === user?.id
   const game = room?.current_game as any
@@ -118,7 +121,16 @@ export default function ResultScreen({ roomId, roomCode }: ResultScreenProps) {
   }
 
   return (
-    <div className="min-h-screen p-4 bg-[#0a0a0a]">
+    <>
+      {/* Death Animation Overlay */}
+      {showDeathAnimation && deathPlayerName && (
+        <DeathAnimation
+          playerName={deathPlayerName}
+          onComplete={handleDeathAnimationComplete}
+        />
+      )}
+
+      <div className="min-h-screen p-4 bg-[#0a0a0a]">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Result Header */}
         <div className="text-center space-y-4">

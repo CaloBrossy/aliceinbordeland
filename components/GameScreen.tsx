@@ -33,7 +33,6 @@ export default function GameScreen({ roomId, roomCode }: GameScreenProps) {
   const { room, players } = useRoom(roomId)
   const { gameState, updateTimer } = useGame(roomId)
   const gsap = useGSAP()
-  const { playSound } = useSounds()
   const sound = useSoundContext()
 
   const isHost = room?.host_id === user?.id
