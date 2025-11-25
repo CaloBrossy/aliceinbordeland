@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { Room, Player } from '@/types/game'
 import { checkAndPromoteHost } from '@/lib/roomCleanup'
@@ -10,7 +10,9 @@ export function useRoom(roomId: string | null) {
   const [players, setPlayers] = useState<Player[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
+  const hostCheckRef = useRef<NodeJS.Timeout | null>(null)
+  const lastHostCheckRef = useRef<number>(0)
 
   useEffect(() => {
     if (!roomId) {
@@ -40,9 +42,6 @@ export function useRoom(roomId: string | null) {
         setRoom(roomData as Room)
         setPlayers((playersData as Player[]) || [])
         setError(null)
-
-        // Check and promote host if needed
-        await checkAndPromoteHost(roomId)
       } catch (err: any) {
         setError(err.message)
       } finally {
@@ -52,12 +51,20 @@ export function useRoom(roomId: string | null) {
 
     fetchRoom()
 
-    // Periodic host check
-    const hostCheckInterval = setInterval(() => {
-      if (roomId) {
-        checkAndPromoteHost(roomId)
+    // Periodic host check (less frequent to avoid loops)
+    if (hostCheckRef.current) {
+      clearInterval(hostCheckRef.current)
+    }
+    hostCheckRef.current = setInterval(() => {
+      const now = Date.now()
+      // Only check if at least 30 seconds have passed since last check
+      if (now - lastHostCheckRef.current > 30000) {
+        lastHostCheckRef.current = now
+        checkAndPromoteHost(roomId).catch(() => {
+          // Silently fail to avoid loops
+        })
       }
-    }, 10000) // Check every 10 seconds
+    }, 30000) // Check every 30 seconds
 
     // Subscribe to room changes
     const roomSubscription = supabase
@@ -81,6 +88,7 @@ export function useRoom(roomId: string | null) {
       .subscribe()
 
     // Subscribe to players changes
+    let playersUpdateTimeout: NodeJS.Timeout | null = null
     const playersSubscription = supabase
       .channel(`players:${roomId}`)
       .on(
@@ -91,26 +99,34 @@ export function useRoom(roomId: string | null) {
           table: 'players',
           filter: `room_id=eq.${roomId}`,
         },
-        async () => {
-          // Refetch players on any change
-          const { data: playersData } = await supabase
-            .from('players')
-            .select('*')
-            .eq('room_id', roomId)
-            .order('created_at', { ascending: true })
-
-          if (playersData) {
-            setPlayers(playersData as Player[])
+        () => {
+          // Debounce player updates to avoid rapid refetches
+          if (playersUpdateTimeout) {
+            clearTimeout(playersUpdateTimeout)
           }
+          playersUpdateTimeout = setTimeout(async () => {
+            // Refetch players on any change
+            const { data: playersData } = await supabase
+              .from('players')
+              .select('*')
+              .eq('room_id', roomId)
+              .order('created_at', { ascending: true })
 
-          // Check host after player changes
-          await checkAndPromoteHost(roomId)
+            if (playersData) {
+              setPlayers(playersData as Player[])
+            }
+          }, 300) // Wait 300ms before refetching
         }
       )
       .subscribe()
 
     return () => {
-      clearInterval(hostCheckInterval)
+      if (hostCheckRef.current) {
+        clearInterval(hostCheckRef.current)
+      }
+      if (playersUpdateTimeout) {
+        clearTimeout(playersUpdateTimeout)
+      }
       roomSubscription.unsubscribe()
       playersSubscription.unsubscribe()
     }

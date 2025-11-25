@@ -23,22 +23,56 @@ export default function Lobby({ roomId, roomCode }: LobbyProps) {
 
   const isHost = room?.host_id === user?.id
 
-  // Update connection status
+  // Update connection status (debounced to avoid loops)
   useEffect(() => {
-    if (user && roomId) {
-      updatePlayerConnection(roomId, user.id, true)
+    if (!user || !roomId) return
 
-      // Update on visibility change
-      const handleVisibilityChange = () => {
-        updatePlayerConnection(roomId, user.id, !document.hidden)
+    let connectionUpdateTimeout: NodeJS.Timeout | null = null
+    let heartbeatInterval: NodeJS.Timeout | null = null
+
+    // Initial connection update
+    const updateConnection = async () => {
+      try {
+        await updatePlayerConnection(roomId, user.id, true)
+      } catch (err) {
+        // Silently fail to avoid loops
       }
+    }
 
-      document.addEventListener('visibilitychange', handleVisibilityChange)
-
-      return () => {
-        updatePlayerConnection(roomId, user.id, false)
-        document.removeEventListener('visibilitychange', handleVisibilityChange)
+    // Update connection with debounce
+    const debouncedUpdate = () => {
+      if (connectionUpdateTimeout) {
+        clearTimeout(connectionUpdateTimeout)
       }
+      connectionUpdateTimeout = setTimeout(updateConnection, 500)
+    }
+
+    // Initial update
+    updateConnection()
+
+    // Heartbeat: update connection every 10 seconds
+    heartbeatInterval = setInterval(() => {
+      updateConnection()
+    }, 10000)
+
+    // Update on visibility change
+    const handleVisibilityChange = () => {
+      debouncedUpdate()
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      if (connectionUpdateTimeout) {
+        clearTimeout(connectionUpdateTimeout)
+      }
+      if (heartbeatInterval) {
+        clearInterval(heartbeatInterval)
+      }
+      updatePlayerConnection(roomId, user.id, false).catch(() => {
+        // Silently fail on cleanup
+      })
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   }, [user, roomId])
 
